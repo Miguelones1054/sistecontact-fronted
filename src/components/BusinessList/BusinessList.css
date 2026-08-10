@@ -34,12 +34,14 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.9rem 1.1rem;
+  padding: 0.85rem 0.9rem;
   border: none;
   background: transparent;
   cursor: pointer;
   text-align: left;
   transition: background 0.15s;
+  min-height: 3rem;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .business-row__summary:hover {
@@ -59,10 +61,11 @@
 }
 
 .business-row__name {
-  font-size: 1rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: #1a202c;
   line-height: 1.3;
+  word-break: break-word;
 }
 
 .business-row__summary-meta {
@@ -103,12 +106,23 @@
   line-height: 1;
 }
 
+.business-row__contact {
+  padding: 0 0.9rem 0.75rem;
+}
+
 .business-row__details {
-  padding: 0 1.1rem 1rem 1.1rem;
+  padding: 0 0.9rem 1rem 0.9rem;
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
   animation: business-row-open 0.18s ease-out;
+  min-width: 0;
+}
+
+@media (min-width: 640px) {
+  .business-row__contact {
+    padding: 0 1.1rem 0.75rem;
+  }
 }
 
 @keyframes business-row-open {
@@ -170,4 +184,243 @@
 
 .business-row__link:hover {
   text-decoration: underline;
+}
+
+.business-row__name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.business-row__visited-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #bee3f8;
+  color: #2a4365;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.business-row__tovisit-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: #feebc8;
+  color: #7b341e;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.business-row__visit-summary {
+  margin-top: 0.25rem;
+  padding: 0.65rem 0.75rem;
+  background: #ebf8ff;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.business-row__visit-line {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #2d3748;
+  line-height: 1.4;
+}
+
+.business-row__visit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.25rem;
+  padding: 0.75rem;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.business-row__visit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+}
+
+.business-row__visit-field input,
+.business-row__visit-field textarea {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.business-row__visit-field input:focus,
+.business-row__visit-field textarea:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+}
+
+.business-row__visit-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
+}
+
+.business-row__visit-btn {
+  padding: 0.55rem 0.8rem;
+  min-height: 2.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2b6cb0;
+  background: #fff;
+  border: 1px solid #90cdf4;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (max-width: 479px) {
+  .business-row__visit-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .business-row__visit-btn {
+    width: 100%;
+    justify-self: stretch;
+    text-align: center;
+  }
+
+  .business-row__visit-btn:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (min-width: 640px) {
+  .business-row__summary {
+    padding: 0.9rem 1.1rem;
+  }
+
+  .business-row__details {
+    padding: 0 1.1rem 1rem 1.1rem;
+  }
+}
+
+.business-row__visit-btn:hover:not(:disabled) {
+  background: #ebf8ff;
+  border-color: #63b3ed;
+}
+
+.business-row__visit-btn--primary {
+  color: #fff;
+  background: #2b6cb0;
+  border-color: #2b6cb0;
+}
+
+.business-row__visit-btn--primary:hover:not(:disabled) {
+  background: #2c5282;
+  border-color: #2c5282;
+}
+
+.business-row__visit-btn--muted {
+  color: #4a5568;
+  border-color: #cbd5e0;
+}
+
+.business-row__visit-btn--muted:hover:not(:disabled) {
+  background: #edf2f7;
+  border-color: #a0aec0;
+}
+
+.business-row__visit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.business-row__visit-error {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #742a2a;
+  background: #fed7d7;
+  padding: 0.45rem 0.6rem;
+  border-radius: 6px;
+}
+
+.business-row__visitors {
+  margin-top: 0.35rem;
+  padding: 0.75rem;
+  background: #f7fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.business-row__visitors-title {
+  margin: 0;
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.business-row__visitors-hint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: #718096;
+}
+
+.business-row__visitors-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.business-row__visitor {
+  padding: 0.55rem 0.65rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.business-row__visitor-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.business-row__visitor-name {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1a202c;
+}
+
+.business-row__visitor-email {
+  font-size: 0.8rem;
+  color: #718096;
+}
+
+.business-row__visitor-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+  font-size: 0.8rem;
+  color: #4a5568;
 }

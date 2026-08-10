@@ -3,6 +3,16 @@ export const APP_STRINGS = {
     name: 'SisteContact',
     tagline: 'Busca comercios por tipo y zona',
   },
+  tabs: {
+    search: 'Buscar',
+    toVisit: 'Por visitar',
+    visited: 'Visitados',
+  },
+  home: {
+    title: 'SisteContact',
+    subtitle: 'Busca comercios por tipo y zona',
+    description: 'Selecciona una zona, ajusta el radio y encuentra negocios cercanos.',
+  },
   login: {
     subtitle: 'Inicia sesión para continuar',
     emailLabel: 'Correo electrónico',
@@ -33,14 +43,45 @@ export const APP_STRINGS = {
     zoneLabel: 'Zona',
     zonePlaceholder: 'Escribe un sector o barrio...',
     zoneHint: 'Selecciona una zona de la lista',
+    radiusLabel: 'Radio de búsqueda',
+    radiusValue: (km: number) =>
+      km === 1 ? '1 km a la redonda' : `${km} km a la redonda`,
+    mapToggleLabel: 'Mapa',
+    mapToggleOn: 'Mostrar mapa',
+    mapToggleOff: 'Ocultar mapa',
     submit: 'Buscar',
     loading: 'Buscando...',
     noResults: 'No se encontraron comercios en esta zona.',
-    resultsTitle: (count: number, type: string, zone: string) =>
-      `${count} ${count === 1 ? 'comercio' : 'comercios'} de "${type}" en ${zone}`,
+    resultsTitle: (count: number, type: string, zone: string, radiusKm?: number) => {
+      const area =
+        radiusKm && radiusKm > 0
+          ? `${zone} (${radiusKm} km)`
+          : zone
+      return `${count} ${count === 1 ? 'comercio' : 'comercios'} de "${type}" en ${area}`
+    },
     errorGeneric: 'Ocurrió un error. Inténtalo de nuevo.',
     zoneRequired: 'Primero selecciona una zona.',
     typeRequired: 'Escribe el tipo de comercio.',
+  },
+  toVisit: {
+    title: 'Comercios por visitar',
+    subtitle: 'Tu lista personal de lugares pendientes.',
+    empty: 'Aún no tienes comercios por visitar. Agrégalos desde los resultados de búsqueda.',
+    loading: 'Cargando lista...',
+    error: 'No se pudo cargar la lista',
+    remove: 'Quitar de la lista',
+    filterAll: 'Todos',
+    filterEmpty: 'No hay comercios con ese estado.',
+  },
+  visited: {
+    title: 'Comercios visitados',
+    subtitle: 'Histórico de tus visitas y notas.',
+    empty: 'Aún no has marcado comercios como visitados.',
+    loading: 'Cargando visitados...',
+    error: 'No se pudo cargar los visitados',
+  },
+  export: {
+    xlsx: 'Exportar Excel',
   },
   business: {
     openNow: 'Abierto ahora',
@@ -51,6 +92,30 @@ export const APP_STRINGS = {
     noRating: 'Sin valoraciones',
     phone: 'Teléfono',
     noPhone: 'Sin teléfono',
+    visitedBadge: 'Visitado',
+    toVisitBadge: 'Por visitar',
+    markVisited: 'Marcar como visitado',
+    editVisit: 'Editar visita',
+    unmarkVisited: 'Quitar visitado',
+    addToVisit: 'Por visitar',
+    removeToVisit: 'Quitar de por visitar',
+    notesLabel: 'Notas de la visita',
+    notesPlaceholder: 'Anota qué observaste, a quién hablaste, etc.',
+    resultLabel: 'Resultado de la visita',
+    resultPlaceholder: 'Ej: interesado, no disponible, agendar seguimiento...',
+    saveVisit: 'Guardar visita',
+    savingVisit: 'Guardando...',
+    visitSaved: 'Visita guardada',
+    visitError: 'No se pudo guardar la visita',
+    toVisitError: 'No se pudo actualizar la lista por visitar',
+    statusError: 'No se pudo actualizar el estado de contacto',
+    whoVisited: 'Quién visitó',
+    whoVisitedTitle: 'Visitantes de este comercio',
+    whoVisitedEmpty: 'Nadie ha marcado este comercio como visitado aún.',
+    whoVisitedLoading: 'Cargando visitantes...',
+    whoVisitedError: 'No se pudieron cargar los visitantes',
+    whoVisitedResult: 'Resultado',
+    youLabel: 'Tú',
   },
 } as const
 
