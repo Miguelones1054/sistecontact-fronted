@@ -165,6 +165,10 @@
   color: #2d3748;
 }
 
+.visit-panel__visitors-title--spaced {
+  margin-top: 1rem;
+}
+
 .visit-panel__visitors-list {
   list-style: none;
   margin: 0;

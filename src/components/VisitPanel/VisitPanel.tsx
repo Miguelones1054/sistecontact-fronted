@@ -3,10 +3,12 @@ import { useAuth } from '../../context/AuthContext'
 import { APP_STRINGS } from '../../constants/strings'
 import {
   deleteVisit,
+  fetchBusinessScheduled,
   fetchBusinessVisitors,
   upsertVisit,
 } from '../../services/api'
-import type { GlobalVisitor, Visit } from '../../types/api'
+import type { GlobalScheduledVisit, GlobalVisitor, Visit } from '../../types/api'
+import { formatVisitDate } from '../../utils/dates'
 import './VisitPanel.css'
 
 export interface VisitTarget {
@@ -55,20 +57,31 @@ function VisitPanel({
   const [error, setError] = useState('')
   const [showVisitors, setShowVisitors] = useState(false)
   const [visitors, setVisitors] = useState<GlobalVisitor[]>([])
+  const [scheduled, setScheduled] = useState<GlobalScheduledVisit[]>([])
   const [visitorsLoading, setVisitorsLoading] = useState(false)
   const [visitorsError, setVisitorsError] = useState('')
+  const [scheduledError, setScheduledError] = useState('')
 
   useEffect(() => {
     if (!showVisitors) {
       setVisitors([])
+      setScheduled([])
       setVisitorsError('')
+      setScheduledError('')
       return
     }
     const ac = new AbortController()
     setVisitorsLoading(true)
     setVisitorsError('')
-    fetchBusinessVisitors(target.place_id, ac.signal)
-      .then(setVisitors)
+    setScheduledError('')
+    Promise.all([
+      fetchBusinessVisitors(target.place_id, ac.signal),
+      fetchBusinessScheduled(target.place_id, ac.signal),
+    ])
+      .then(([visitorItems, scheduledItems]) => {
+        setVisitors(visitorItems)
+        setScheduled(scheduledItems)
+      })
       .catch((err) => {
         if (err.name !== 'AbortError') {
           setVisitorsError(
@@ -76,6 +89,7 @@ function VisitPanel({
               ? err.message
               : APP_STRINGS.business.whoVisitedError,
           )
+          setScheduledError(APP_STRINGS.business.whoScheduledError)
         }
       })
       .finally(() => setVisitorsLoading(false))
@@ -232,6 +246,56 @@ function VisitPanel({
       {showVisitors && (
         <div className="visit-panel__visitors">
           <h4 className="visit-panel__visitors-title">
+            {APP_STRINGS.business.whoScheduledTitle}
+          </h4>
+          {visitorsLoading && (
+            <p className="visit-panel__hint">
+              {APP_STRINGS.business.whoScheduledLoading}
+            </p>
+          )}
+          {scheduledError && (
+            <p className="visit-panel__error">{scheduledError}</p>
+          )}
+          {!visitorsLoading && !scheduledError && scheduled.length === 0 && (
+            <p className="visit-panel__hint">
+              {APP_STRINGS.business.whoScheduledEmpty}
+            </p>
+          )}
+          {!visitorsLoading && scheduled.length > 0 && (
+            <ul className="visit-panel__visitors-list">
+              {scheduled.map((s) => {
+                const isYou = user?.uid === s.uid
+                const label = s.display_name || s.email || s.uid
+                return (
+                  <li key={s.uid} className="visit-panel__visitor">
+                    <div className="visit-panel__visitor-main">
+                      <span className="visit-panel__visitor-name">
+                        {label}
+                        {isYou ? ` (${APP_STRINGS.business.youLabel})` : ''}
+                      </span>
+                      {s.email &&
+                        s.display_name &&
+                        s.display_name !== s.email && (
+                          <span className="visit-panel__visitor-email">
+                            {s.email}
+                          </span>
+                        )}
+                    </div>
+                    <div className="visit-panel__visitor-meta">
+                      {s.visit_date && (
+                        <span>
+                          {APP_STRINGS.business.whoScheduledDate}:{' '}
+                          {formatVisitDate(s.visit_date)}
+                        </span>
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
+
+          <h4 className="visit-panel__visitors-title visit-panel__visitors-title--spaced">
             {APP_STRINGS.business.whoVisitedTitle}
           </h4>
           {visitorsLoading && (

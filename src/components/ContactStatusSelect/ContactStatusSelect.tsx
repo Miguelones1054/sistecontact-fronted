@@ -28,7 +28,7 @@ export const CONTACT_STATUS_OPTIONS: {
   },
   {
     value: 'affiliated',
-    label: 'Ya afiliado',
+    label: 'Ya tiene el servicio activo',
     className: 'contact-status--affiliated',
   },
 ]

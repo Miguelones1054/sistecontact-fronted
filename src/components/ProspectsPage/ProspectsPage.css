@@ -1,0 +1,342 @@
+.prospects__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  margin-bottom: 0.25rem;
+}
+
+.prospects__title {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.1rem, 4.5vw, 1.25rem);
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.prospects__subtitle {
+  margin: 0 0 1.25rem;
+  color: #4a5568;
+  font-size: 0.92rem;
+}
+
+.prospects__filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.65rem;
+}
+
+.prospects__filters + .prospects__filters {
+  margin-bottom: 1rem;
+}
+
+.prospects__custom-date {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.prospects__custom-date-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.prospects__custom-date input {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.35rem 0.5rem;
+  min-height: 2.2rem;
+  border: 1px solid #90cdf4;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.prospects__custom-date input:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+}
+
+.prospects__filter {
+  padding: 0.4rem 0.7rem;
+  min-height: 2.2rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #4a5568;
+  background: #edf2f7;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.prospects__filter--active {
+  color: #1a365d;
+  background: #fff;
+  border-color: #90cdf4;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.prospects__card-top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+}
+
+.prospects__export {
+  flex-shrink: 0;
+  padding: 0.55rem 0.9rem;
+  min-height: 2.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #22543d;
+  background: #fff;
+  border: 1px solid #9ae6b4;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.prospects__export:hover:not(:disabled) {
+  background: #f0fff4;
+}
+
+.prospects__export:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.prospects__hint,
+.prospects__empty {
+  margin: 0;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  color: #718096;
+  background: #fff;
+  border: 1px dashed #cbd5e0;
+  border-radius: 12px;
+}
+
+.prospects__error {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.8rem;
+  background: #fed7d7;
+  color: #742a2a;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  word-break: break-word;
+}
+
+.prospects__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.prospects__card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.prospects__card-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.prospects__name {
+  margin: 0;
+  font-size: 1.02rem;
+  font-weight: 700;
+  color: #1a202c;
+  word-break: break-word;
+}
+
+.prospects__address {
+  margin: 0;
+  font-size: 0.9rem;
+  color: #4a5568;
+  line-height: 1.4;
+  word-break: break-word;
+}
+
+.prospects__phone {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #2b6cb0;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.prospects__phone:hover {
+  text-decoration: underline;
+}
+
+.prospects__rating {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #d69e2e;
+}
+
+.prospects__link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2b6cb0;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.prospects__link:hover {
+  text-decoration: underline;
+}
+
+.prospects__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.prospects__remove {
+  padding: 0.5rem 0.8rem;
+  min-height: 2.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #c53030;
+  background: #fff;
+  border: 1px solid #feb2b2;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.prospects__remove:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.prospects__sections {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.prospects__section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.prospects__section-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.4rem;
+  height: 1.4rem;
+  padding: 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #2b6cb0;
+  background: #ebf8ff;
+  border-radius: 999px;
+}
+
+.prospects__section--today .prospects__section-count {
+  color: #276749;
+  background: #c6f6d5;
+}
+
+.prospects__section--overdue .prospects__section-count {
+  color: #9b2c2c;
+  background: #fed7d7;
+}
+
+.prospects__date-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+  padding-top: 0.55rem;
+  border-top: 1px solid #edf2f7;
+}
+
+.prospects__date-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.prospects__date-field input {
+  max-width: 11.5rem;
+  font: inherit;
+  font-weight: 400;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+}
+
+.prospects__date-field input:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+}
+
+.prospects__date-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+.prospects__date-hint {
+  font-size: 0.8rem;
+  color: #718096;
+  text-transform: capitalize;
+}
+
+.prospects__date-save {
+  padding: 0.35rem 0.7rem;
+  min-height: 2rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #2b6cb0;
+  background: #fff;
+  border: 1px solid #90cdf4;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.prospects__date-save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (min-width: 640px) {
+  .prospects__card {
+    padding: 1rem 1.1rem;
+  }
+
+  .prospects__date-row {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}

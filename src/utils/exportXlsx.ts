@@ -1,5 +1,5 @@
 import * as XLSX from 'xlsx'
-import type { ToVisit, Visit } from '../types/api'
+import type { Prospect, Visit } from '../types/api'
 import { contactStatusLabel } from '../components/ContactStatusSelect/ContactStatusSelect'
 
 function formatDate(value?: string): string {
@@ -33,7 +33,7 @@ function downloadWorkbook(rows: Record<string, unknown>[], sheetName: string, fi
   XLSX.writeFile(workbook, filename)
 }
 
-export function exportToVisitXlsx(items: ToVisit[]) {
+export function exportProspectsXlsx(items: Prospect[]) {
   const rows = items.map((item) => ({
     'Place ID': item.place_id,
     Nombre: item.name,
@@ -46,6 +46,7 @@ export function exportToVisitXlsx(items: ToVisit[]) {
     Longitud: item.longitude ?? '',
     'Google Maps': item.google_maps_uri ?? '',
     'Estado de contacto': contactStatusLabel(item.contact_status),
+    'Fecha de visita': item.visit_date ?? '',
     'Agregado el': formatDate(item.created_at),
     'Actualizado el': formatDate(item.updated_at),
   }))
@@ -53,8 +54,8 @@ export function exportToVisitXlsx(items: ToVisit[]) {
   const stamp = new Date().toISOString().slice(0, 10)
   downloadWorkbook(
     rows.length ? rows : [{ Nombre: '(sin registros)' }],
-    'Por visitar',
-    `sistecontact-por-visitar-${stamp}.xlsx`,
+    'Prospectos',
+    `sistecontact-prospectos-${stamp}.xlsx`,
   )
 }
 

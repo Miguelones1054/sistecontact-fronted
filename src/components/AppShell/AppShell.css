@@ -64,6 +64,14 @@
   line-height: 1.2;
 }
 
+.app-shell__subtitle {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1rem, 3.8vw, 1.2rem);
+  font-weight: 600;
+  color: #2b6cb0;
+  letter-spacing: 0.02em;
+}
+
 .app-shell__tagline {
   margin: 0.35rem 0 0;
   color: #4a5568;
@@ -73,7 +81,7 @@
 
 .app-shell__tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.25rem;
   margin-bottom: 1.15rem;
   padding: 0.25rem;

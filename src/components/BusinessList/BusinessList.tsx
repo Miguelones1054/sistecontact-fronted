@@ -2,21 +2,18 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { APP_STRINGS } from '../../constants/strings'
 import {
-  deleteToVisit,
-  deleteVisit,
+  deleteProspect,
+  fetchBusinessScheduled,
   fetchBusinessVisitors,
-  fetchContactStatuses,
-  fetchToVisitByPlaceIds,
-  fetchVisits,
-  upsertContactStatus,
-  upsertToVisit,
-  upsertVisit,
+  fetchProspectsByPlaceIds,
+  upsertProspect,
 } from '../../services/api'
-import type { Business, GlobalVisitor, Visit } from '../../types/api'
-import ContactStatusSelect, {
-  type ContactStatus,
-  normalizeContactStatus,
-} from '../ContactStatusSelect/ContactStatusSelect'
+import type {
+  Business,
+  GlobalScheduledVisit,
+  GlobalVisitor,
+} from '../../types/api'
+import { formatVisitDate } from '../../utils/dates'
 import './BusinessList.css'
 
 interface Props {
@@ -41,55 +38,27 @@ function formatVisitorDate(value: string): string {
 function BusinessList({ businesses }: Props) {
   const { user } = useAuth()
   const [openIds, setOpenIds] = useState<Set<string>>(() => new Set())
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [visitorsOpenId, setVisitorsOpenId] = useState<string | null>(null)
   const [visitors, setVisitors] = useState<GlobalVisitor[]>([])
+  const [scheduled, setScheduled] = useState<GlobalScheduledVisit[]>([])
   const [visitorsLoading, setVisitorsLoading] = useState(false)
   const [visitorsError, setVisitorsError] = useState('')
-  const [visits, setVisits] = useState<Record<string, Visit>>({})
-  const [toVisitIds, setToVisitIds] = useState<Set<string>>(() => new Set())
-  const [contactStatuses, setContactStatuses] = useState<Record<string, ContactStatus>>(
-    {},
-  )
-  const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
-  const [notes, setNotes] = useState('')
-  const [visitResult, setVisitResult] = useState('')
-  const [savingId, setSavingId] = useState<string | null>(null)
-  const [toVisitBusyId, setToVisitBusyId] = useState<string | null>(null)
-  const [visitError, setVisitError] = useState('')
+  const [scheduledError, setScheduledError] = useState('')
+  const [prospectIds, setProspectIds] = useState<Set<string>>(() => new Set())
+  const [prospectBusyId, setProspectBusyId] = useState<string | null>(null)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     if (businesses.length === 0) {
-      setVisits({})
-      setToVisitIds(new Set())
-      setContactStatuses({})
+      setProspectIds(new Set())
       return
     }
 
     const ids = businesses.map((b) => b.place_id).filter(Boolean)
     const ac = new AbortController()
-    Promise.all([
-      fetchVisits(ids, ac.signal),
-      fetchToVisitByPlaceIds(ids, ac.signal),
-      fetchContactStatuses(ids, ac.signal),
-    ])
-      .then(([visitItems, toVisitItems, statusItems]) => {
-        const map: Record<string, Visit> = {}
-        for (const v of visitItems) {
-          map[v.place_id] = v
-        }
-        setVisits(map)
-        setToVisitIds(new Set(toVisitItems.map((i) => i.place_id)))
-        const statuses: Record<string, ContactStatus> = {}
-        for (const s of statusItems) {
-          statuses[s.place_id] = normalizeContactStatus(s.contact_status)
-        }
-        for (const t of toVisitItems) {
-          if (!statuses[t.place_id] && t.contact_status) {
-            statuses[t.place_id] = normalizeContactStatus(t.contact_status)
-          }
-        }
-        setContactStatuses(statuses)
+    fetchProspectsByPlaceIds(ids, ac.signal)
+      .then((items) => {
+        setProspectIds(new Set(items.map((i) => i.place_id)))
       })
       .catch((err) => {
         if (err.name !== 'AbortError') {
@@ -103,7 +72,9 @@ function BusinessList({ businesses }: Props) {
   useEffect(() => {
     if (!visitorsOpenId) {
       setVisitors([])
+      setScheduled([])
       setVisitorsError('')
+      setScheduledError('')
       setVisitorsLoading(false)
       return
     }
@@ -111,15 +82,23 @@ function BusinessList({ businesses }: Props) {
     const ac = new AbortController()
     setVisitorsLoading(true)
     setVisitorsError('')
-    fetchBusinessVisitors(visitorsOpenId, ac.signal)
-      .then(setVisitors)
+    setScheduledError('')
+    Promise.all([
+      fetchBusinessVisitors(visitorsOpenId, ac.signal),
+      fetchBusinessScheduled(visitorsOpenId, ac.signal),
+    ])
+      .then(([visitorItems, scheduledItems]) => {
+        setVisitors(visitorItems)
+        setScheduled(scheduledItems)
+      })
       .catch((err) => {
         if (err.name !== 'AbortError') {
-          setVisitorsError(
+          const msg =
             err instanceof Error
               ? err.message
-              : APP_STRINGS.business.whoVisitedError,
-          )
+              : APP_STRINGS.business.whoVisitedError
+          setVisitorsError(msg)
+          setScheduledError(APP_STRINGS.business.whoScheduledError)
         }
       })
       .finally(() => setVisitorsLoading(false))
@@ -138,106 +117,31 @@ function BusinessList({ businesses }: Props) {
       else next.add(id)
       return next
     })
-    if (editingId === id) {
-      setEditingId(null)
-      setVisitError('')
-    }
     if (visitorsOpenId === id) {
       setVisitorsOpenId(null)
     }
-  }
-
-  function openVisitForm(b: Business) {
-    const existing = visits[b.place_id]
-    setEditingId(b.place_id)
-    setNotes(existing?.notes ?? '')
-    setVisitResult(existing?.visit_result ?? '')
-    setVisitError('')
-    setVisitorsOpenId(null)
-    setOpenIds((prev) => new Set(prev).add(b.place_id))
+    setActionError('')
   }
 
   function toggleVisitors(placeId: string) {
     setVisitorsOpenId((prev) => (prev === placeId ? null : placeId))
-    setEditingId(null)
-    setVisitError('')
+    setActionError('')
   }
 
-  async function handleSaveVisit(b: Business) {
-    setSavingId(b.place_id)
-    setVisitError('')
+  async function handleToggleProspect(b: Business) {
+    setActionError('')
+    const isProspect = prospectIds.has(b.place_id)
+    setProspectBusyId(b.place_id)
     try {
-      const saved = await upsertVisit(b.place_id, {
-        name: b.name,
-        address: b.address,
-        notes,
-        visit_result: visitResult,
-        phone: b.phone,
-        rating: b.rating,
-        user_rating_count: b.user_rating_count,
-        google_maps_uri: b.google_maps_uri,
-        latitude: b.location?.latitude,
-        longitude: b.location?.longitude,
-        open_now: b.open_now,
-      })
-      setVisits((prev) => ({ ...prev, [b.place_id]: saved }))
-      setToVisitIds((prev) => {
-        const next = new Set(prev)
-        next.delete(b.place_id)
-        return next
-      })
-      setEditingId(null)
-      if (visitorsOpenId === b.place_id) {
-        setVisitorsOpenId(null)
-        queueMicrotask(() => setVisitorsOpenId(b.place_id))
-      }
-    } catch (err) {
-      setVisitError(
-        err instanceof Error ? err.message : APP_STRINGS.business.visitError,
-      )
-    } finally {
-      setSavingId(null)
-    }
-  }
-
-  async function handleUnmark(b: Business) {
-    setSavingId(b.place_id)
-    setVisitError('')
-    try {
-      await deleteVisit(b.place_id)
-      setVisits((prev) => {
-        const next = { ...prev }
-        delete next[b.place_id]
-        return next
-      })
-      setEditingId(null)
-      if (visitorsOpenId === b.place_id) {
-        setVisitorsOpenId(null)
-        queueMicrotask(() => setVisitorsOpenId(b.place_id))
-      }
-    } catch (err) {
-      setVisitError(
-        err instanceof Error ? err.message : APP_STRINGS.business.visitError,
-      )
-    } finally {
-      setSavingId(null)
-    }
-  }
-
-  async function handleToggleToVisit(b: Business) {
-    setToVisitBusyId(b.place_id)
-    setVisitError('')
-    const isQueued = toVisitIds.has(b.place_id)
-    try {
-      if (isQueued) {
-        await deleteToVisit(b.place_id)
-        setToVisitIds((prev) => {
+      if (isProspect) {
+        await deleteProspect(b.place_id)
+        setProspectIds((prev) => {
           const next = new Set(prev)
           next.delete(b.place_id)
           return next
         })
       } else {
-        await upsertToVisit(b.place_id, {
+        await upsertProspect(b.place_id, {
           name: b.name,
           address: b.address,
           phone: b.phone,
@@ -247,35 +151,16 @@ function BusinessList({ businesses }: Props) {
           latitude: b.location?.latitude,
           longitude: b.location?.longitude,
           open_now: b.open_now,
-          contact_status: contactStatuses[b.place_id] ?? 'not_contacted',
+          contact_status: 'not_contacted',
         })
-        setToVisitIds((prev) => new Set(prev).add(b.place_id))
+        setProspectIds((prev) => new Set(prev).add(b.place_id))
       }
     } catch (err) {
-      setVisitError(
-        err instanceof Error ? err.message : APP_STRINGS.business.toVisitError,
+      setActionError(
+        err instanceof Error ? err.message : APP_STRINGS.business.prospectError,
       )
     } finally {
-      setToVisitBusyId(null)
-    }
-  }
-
-  async function handleContactStatus(b: Business, status: ContactStatus) {
-    setStatusBusyId(b.place_id)
-    setVisitError('')
-    try {
-      await upsertContactStatus(b.place_id, {
-        name: b.name,
-        address: b.address,
-        contact_status: status,
-      })
-      setContactStatuses((prev) => ({ ...prev, [b.place_id]: status }))
-    } catch (err) {
-      setVisitError(
-        err instanceof Error ? err.message : APP_STRINGS.business.statusError,
-      )
-    } finally {
-      setStatusBusyId(null)
+      setProspectBusyId(null)
     }
   }
 
@@ -284,19 +169,14 @@ function BusinessList({ businesses }: Props) {
       {businesses.map((b) => {
         const id = b.place_id
         const isOpen = openIds.has(id)
-        const visit = visits[id]
-        const isEditing = editingId === id
-        const isSaving = savingId === id
         const showVisitors = visitorsOpenId === id
-        const isToVisit = toVisitIds.has(id)
-        const toVisitBusy = toVisitBusyId === id
+        const isProspect = prospectIds.has(id)
+        const prospectBusy = prospectBusyId === id
 
         return (
           <li
             key={id}
-            className={`business-row ${isOpen ? 'business-row--open' : ''} ${
-              visit?.visited ? 'business-row--visited' : ''
-            }`}
+            className={`business-row ${isOpen ? 'business-row--open' : ''}`}
           >
             <button
               type="button"
@@ -307,14 +187,9 @@ function BusinessList({ businesses }: Props) {
               <span className="business-row__summary-main">
                 <span className="business-row__name-row">
                   <span className="business-row__name">{b.name}</span>
-                  {visit?.visited && (
-                    <span className="business-row__visited-badge">
-                      {APP_STRINGS.business.visitedBadge}
-                    </span>
-                  )}
-                  {isToVisit && !visit?.visited && (
+                  {isProspect && (
                     <span className="business-row__tovisit-badge">
-                      {APP_STRINGS.business.toVisitBadge}
+                      {APP_STRINGS.business.prospectBadge}
                     </span>
                   )}
                 </span>
@@ -339,14 +214,6 @@ function BusinessList({ businesses }: Props) {
                 {isOpen ? '▾' : '▸'}
               </span>
             </button>
-
-            <div className="business-row__contact">
-              <ContactStatusSelect
-                value={contactStatuses[id]}
-                disabled={statusBusyId === id}
-                onChange={(status) => handleContactStatus(b, status)}
-              />
-            </div>
 
             {isOpen && (
               <div className="business-row__details">
@@ -387,116 +254,89 @@ function BusinessList({ businesses }: Props) {
                   </a>
                 )}
 
-                {visit?.visited && !isEditing && (
-                  <div className="business-row__visit-summary">
-                    {visit.visit_result && (
-                      <p className="business-row__visit-line">
-                        <strong>{APP_STRINGS.business.resultLabel}:</strong>{' '}
-                        {visit.visit_result}
-                      </p>
-                    )}
-                    {visit.notes && (
-                      <p className="business-row__visit-line">
-                        <strong>{APP_STRINGS.business.notesLabel}:</strong>{' '}
-                        {visit.notes}
-                      </p>
-                    )}
-                  </div>
-                )}
+                <div className="business-row__visit-actions">
+                  <button
+                    type="button"
+                    className="business-row__visit-btn business-row__visit-btn--primary"
+                    onClick={() => handleToggleProspect(b)}
+                    disabled={prospectBusy}
+                  >
+                    {prospectBusy
+                      ? APP_STRINGS.business.savingVisit
+                      : isProspect
+                        ? APP_STRINGS.business.removeProspect
+                        : APP_STRINGS.business.addProspect}
+                  </button>
+                  <button
+                    type="button"
+                    className="business-row__visit-btn"
+                    onClick={() => toggleVisitors(id)}
+                  >
+                    {APP_STRINGS.business.whoVisited}
+                  </button>
+                </div>
 
-                {!isEditing ? (
-                  <div className="business-row__visit-actions">
-                    <button
-                      type="button"
-                      className="business-row__visit-btn"
-                      onClick={() => openVisitForm(b)}
-                    >
-                      {visit?.visited
-                        ? APP_STRINGS.business.editVisit
-                        : APP_STRINGS.business.markVisited}
-                    </button>
-                    <button
-                      type="button"
-                      className="business-row__visit-btn"
-                      onClick={() => handleToggleToVisit(b)}
-                      disabled={toVisitBusy}
-                    >
-                      {isToVisit
-                        ? APP_STRINGS.business.removeToVisit
-                        : APP_STRINGS.business.addToVisit}
-                    </button>
-                    <button
-                      type="button"
-                      className="business-row__visit-btn"
-                      onClick={() => toggleVisitors(id)}
-                    >
-                      {APP_STRINGS.business.whoVisited}
-                    </button>
-                    {visit?.visited && (
-                      <button
-                        type="button"
-                        className="business-row__visit-btn business-row__visit-btn--muted"
-                        onClick={() => handleUnmark(b)}
-                        disabled={isSaving}
-                      >
-                        {APP_STRINGS.business.unmarkVisited}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="business-row__visit-form">
-                    <label className="business-row__visit-field">
-                      <span>{APP_STRINGS.business.resultLabel}</span>
-                      <input
-                        type="text"
-                        value={visitResult}
-                        placeholder={APP_STRINGS.business.resultPlaceholder}
-                        onChange={(e) => setVisitResult(e.target.value)}
-                        disabled={isSaving}
-                      />
-                    </label>
-                    <label className="business-row__visit-field">
-                      <span>{APP_STRINGS.business.notesLabel}</span>
-                      <textarea
-                        rows={3}
-                        value={notes}
-                        placeholder={APP_STRINGS.business.notesPlaceholder}
-                        onChange={(e) => setNotes(e.target.value)}
-                        disabled={isSaving}
-                      />
-                    </label>
-                    {visitError && (
-                      <p className="business-row__visit-error">{visitError}</p>
-                    )}
-                    <div className="business-row__visit-actions">
-                      <button
-                        type="button"
-                        className="business-row__visit-btn business-row__visit-btn--primary"
-                        onClick={() => handleSaveVisit(b)}
-                        disabled={isSaving}
-                      >
-                        {isSaving
-                          ? APP_STRINGS.business.savingVisit
-                          : APP_STRINGS.business.saveVisit}
-                      </button>
-                      <button
-                        type="button"
-                        className="business-row__visit-btn business-row__visit-btn--muted"
-                        onClick={() => {
-                          setEditingId(null)
-                          setVisitError('')
-                        }}
-                        disabled={isSaving}
-                      >
-                        Cancelar
-                      </button>
-                    </div>
-                  </div>
+                {actionError && (
+                  <p className="business-row__visit-error">{actionError}</p>
                 )}
 
                 {showVisitors && (
                   <div className="business-row__visitors">
                     <h3 className="business-row__visitors-title">
+                      {APP_STRINGS.business.whoScheduledTitle}
+                    </h3>
+                    {visitorsLoading && (
+                      <p className="business-row__visitors-hint">
+                        {APP_STRINGS.business.whoScheduledLoading}
+                      </p>
+                    )}
+                    {scheduledError && (
+                      <p className="business-row__visit-error">{scheduledError}</p>
+                    )}
+                    {!visitorsLoading &&
+                      !scheduledError &&
+                      scheduled.length === 0 && (
+                        <p className="business-row__visitors-hint">
+                          {APP_STRINGS.business.whoScheduledEmpty}
+                        </p>
+                      )}
+                    {!visitorsLoading && scheduled.length > 0 && (
+                      <ul className="business-row__visitors-list">
+                        {scheduled.map((s) => {
+                          const isYou = user?.uid === s.uid
+                          const label = s.display_name || s.email || s.uid
+                          return (
+                            <li key={s.uid} className="business-row__visitor">
+                              <div className="business-row__visitor-main">
+                                <span className="business-row__visitor-name">
+                                  {label}
+                                  {isYou
+                                    ? ` (${APP_STRINGS.business.youLabel})`
+                                    : ''}
+                                </span>
+                                {s.email &&
+                                  s.display_name &&
+                                  s.display_name !== s.email && (
+                                    <span className="business-row__visitor-email">
+                                      {s.email}
+                                    </span>
+                                  )}
+                              </div>
+                              <div className="business-row__visitor-meta">
+                                {s.visit_date && (
+                                  <span>
+                                    {APP_STRINGS.business.whoScheduledDate}:{' '}
+                                    {formatVisitDate(s.visit_date)}
+                                  </span>
+                                )}
+                              </div>
+                            </li>
+                          )
+                        })}
+                      </ul>
+                    )}
+
+                    <h3 className="business-row__visitors-title business-row__visitors-title--spaced">
                       {APP_STRINGS.business.whoVisitedTitle}
                     </h3>
                     {visitorsLoading && (
@@ -507,29 +347,34 @@ function BusinessList({ businesses }: Props) {
                     {visitorsError && (
                       <p className="business-row__visit-error">{visitorsError}</p>
                     )}
-                    {!visitorsLoading && !visitorsError && visitors.length === 0 && (
-                      <p className="business-row__visitors-hint">
-                        {APP_STRINGS.business.whoVisitedEmpty}
-                      </p>
-                    )}
+                    {!visitorsLoading &&
+                      !visitorsError &&
+                      visitors.length === 0 && (
+                        <p className="business-row__visitors-hint">
+                          {APP_STRINGS.business.whoVisitedEmpty}
+                        </p>
+                      )}
                     {!visitorsLoading && visitors.length > 0 && (
                       <ul className="business-row__visitors-list">
                         {visitors.map((v) => {
                           const isYou = user?.uid === v.uid
-                          const label =
-                            v.display_name || v.email || v.uid
+                          const label = v.display_name || v.email || v.uid
                           return (
                             <li key={v.uid} className="business-row__visitor">
                               <div className="business-row__visitor-main">
                                 <span className="business-row__visitor-name">
                                   {label}
-                                  {isYou ? ` (${APP_STRINGS.business.youLabel})` : ''}
+                                  {isYou
+                                    ? ` (${APP_STRINGS.business.youLabel})`
+                                    : ''}
                                 </span>
-                                {v.email && v.display_name && v.display_name !== v.email && (
-                                  <span className="business-row__visitor-email">
-                                    {v.email}
-                                  </span>
-                                )}
+                                {v.email &&
+                                  v.display_name &&
+                                  v.display_name !== v.email && (
+                                    <span className="business-row__visitor-email">
+                                      {v.email}
+                                    </span>
+                                  )}
                               </div>
                               <div className="business-row__visitor-meta">
                                 {v.visit_result && (

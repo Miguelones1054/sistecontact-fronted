@@ -4,7 +4,8 @@ import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute'
 import Login from './components/Login/Login'
 import AppShell from './components/AppShell/AppShell'
 import Search from './components/Search/Search'
-import ToVisitPage from './components/ToVisitPage/ToVisitPage'
+import ProspectsPage from './components/ProspectsPage/ProspectsPage'
+import VisitsPage from './components/VisitsPage/VisitsPage'
 import VisitedPage from './components/VisitedPage/VisitedPage'
 
 function App() {
@@ -21,7 +22,9 @@ function App() {
             }
           >
             <Route path="/" element={<Search />} />
-            <Route path="/por-visitar" element={<ToVisitPage />} />
+            <Route path="/prospectos" element={<ProspectsPage />} />
+            <Route path="/visitas" element={<VisitsPage />} />
+            <Route path="/por-visitar" element={<Navigate to="/visitas" replace />} />
             <Route path="/visitados" element={<VisitedPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

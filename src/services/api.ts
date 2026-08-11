@@ -2,11 +2,12 @@ import { auth } from '../lib/firebase'
 import type {
   ContactStatusRecord,
   ErrorResponse,
+  GlobalScheduledVisit,
   GlobalVisitor,
+  Prospect,
   SearchResponse,
-  ToVisit,
   UpsertContactStatusPayload,
-  UpsertToVisitPayload,
+  UpsertProspectPayload,
   UpsertVisitPayload,
   Visit,
   Zone,
@@ -113,41 +114,57 @@ export async function fetchBusinessVisitors(
   )
 }
 
-export async function fetchToVisitList(signal?: AbortSignal): Promise<ToVisit[]> {
+export async function fetchBusinessScheduled(
+  placeId: string,
+  signal?: AbortSignal,
+): Promise<GlobalScheduledVisit[]> {
   const headers = await authHeaders()
-  return request<ToVisit[]>('/to-visit', { signal, headers })
+  return request<GlobalScheduledVisit[]>(
+    `/businesses/${encodeURIComponent(placeId)}/scheduled`,
+    { signal, headers },
+  )
 }
 
-export async function fetchToVisitByPlaceIds(
+export async function fetchProspectsList(
+  signal?: AbortSignal,
+): Promise<Prospect[]> {
+  const headers = await authHeaders()
+  return request<Prospect[]>('/prospects', { signal, headers })
+}
+
+export async function fetchProspectsByPlaceIds(
   placeIds: string[],
   signal?: AbortSignal,
-): Promise<ToVisit[]> {
+): Promise<Prospect[]> {
   const headers = await authHeaders()
   const q =
     placeIds.length > 0
       ? `?place_ids=${placeIds.map(encodeURIComponent).join(',')}`
       : ''
-  return request<ToVisit[]>(`/to-visit${q}`, { signal, headers })
+  return request<Prospect[]>(`/prospects${q}`, { signal, headers })
 }
 
-export async function upsertToVisit(
+export async function upsertProspect(
   placeId: string,
-  payload: UpsertToVisitPayload,
-): Promise<ToVisit> {
+  payload: UpsertProspectPayload,
+): Promise<Prospect> {
   const headers = await authHeaders()
-  return request<ToVisit>(`/to-visit/${encodeURIComponent(placeId)}`, {
+  return request<Prospect>(`/prospects/${encodeURIComponent(placeId)}`, {
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),
   })
 }
 
-export async function deleteToVisit(placeId: string): Promise<void> {
+export async function deleteProspect(placeId: string): Promise<void> {
   const headers = await authHeaders()
-  await request<{ status: string }>(`/to-visit/${encodeURIComponent(placeId)}`, {
-    method: 'DELETE',
-    headers,
-  })
+  await request<{ status: string }>(
+    `/prospects/${encodeURIComponent(placeId)}`,
+    {
+      method: 'DELETE',
+      headers,
+    },
+  )
 }
 
 export async function fetchContactStatuses(

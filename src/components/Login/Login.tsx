@@ -46,6 +46,7 @@ function Login() {
       <section className="login__panel">
         <header className="login__header">
           <h1 className="login__brand">{APP_STRINGS.app.name}</h1>
+          <p className="login__product">{APP_STRINGS.app.subtitle}</p>
           <p className="login__subtitle">{APP_STRINGS.login.subtitle}</p>
         </header>
 

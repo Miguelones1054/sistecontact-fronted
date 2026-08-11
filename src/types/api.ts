@@ -85,7 +85,18 @@ export interface GlobalVisitor {
   updated_at: string
 }
 
-export interface ToVisit {
+export interface GlobalScheduledVisit {
+  uid: string
+  email: string
+  display_name: string
+  place_id: string
+  business_name: string
+  visit_date: string
+  created_at: string
+  updated_at: string
+}
+
+export interface Prospect {
   place_id: string
   name: string
   address: string
@@ -97,11 +108,12 @@ export interface ToVisit {
   longitude?: number
   open_now?: boolean | null
   contact_status?: string
+  visit_date?: string
   created_at: string
   updated_at: string
 }
 
-export interface UpsertToVisitPayload {
+export interface UpsertProspectPayload {
   name: string
   address: string
   phone?: string
@@ -112,6 +124,8 @@ export interface UpsertToVisitPayload {
   longitude?: number
   open_now?: boolean | null
   contact_status?: string
+  visit_date?: string
+  clear_visit_date?: boolean
 }
 
 export interface ContactStatusRecord {

@@ -33,6 +33,7 @@ function AppShell() {
 
       <header className="app-shell__header">
         <h1 className="app-shell__title">{APP_STRINGS.app.name}</h1>
+        <p className="app-shell__subtitle">{APP_STRINGS.app.subtitle}</p>
         <p className="app-shell__tagline">{APP_STRINGS.app.tagline}</p>
       </header>
 
@@ -47,12 +48,20 @@ function AppShell() {
           {APP_STRINGS.tabs.search}
         </NavLink>
         <NavLink
-          to="/por-visitar"
+          to="/prospectos"
           className={({ isActive }) =>
             `app-shell__tab${isActive ? ' app-shell__tab--active' : ''}`
           }
         >
-          {APP_STRINGS.tabs.toVisit}
+          {APP_STRINGS.tabs.prospects}
+        </NavLink>
+        <NavLink
+          to="/visitas"
+          className={({ isActive }) =>
+            `app-shell__tab${isActive ? ' app-shell__tab--active' : ''}`
+          }
+        >
+          {APP_STRINGS.tabs.visits}
         </NavLink>
         <NavLink
           to="/visitados"

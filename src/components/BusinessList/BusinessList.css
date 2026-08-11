@@ -232,7 +232,8 @@
   line-height: 1.4;
 }
 
-.business-row__visit-form {
+.business-row__visit-form,
+.business-row__schedule {
   display: flex;
   flex-direction: column;
   gap: 0.65rem;
@@ -241,6 +242,11 @@
   background: #f7fafc;
   border: 1px solid #e2e8f0;
   border-radius: 8px;
+}
+
+.business-row__schedule {
+  background: #ebf8ff;
+  border-color: #bee3f8;
 }
 
 .business-row__visit-field {
@@ -373,6 +379,10 @@
   font-size: 0.92rem;
   font-weight: 700;
   color: #2d3748;
+}
+
+.business-row__visitors-title--spaced {
+  margin-top: 1rem;
 }
 
 .business-row__visitors-hint {
