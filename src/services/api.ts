@@ -8,9 +8,11 @@ import type {
   SearchResponse,
   UpsertContactStatusPayload,
   UpsertProspectPayload,
+  UpsertSchedulingSettingsPayload,
   UpsertVisitPayload,
   Visit,
   Zone,
+  SchedulingSettings,
 } from '../types/api'
 
 const PROD_API_ORIGIN = 'https://apisistecontact.nodefex.com'
@@ -209,4 +211,25 @@ export async function upsertContactStatus(
       body: JSON.stringify(payload),
     },
   )
+}
+
+export async function fetchSchedulingSettings(
+  signal?: AbortSignal,
+): Promise<SchedulingSettings> {
+  const headers = await authHeaders()
+  return request<SchedulingSettings>('/settings/scheduling', {
+    signal,
+    headers,
+  })
+}
+
+export async function upsertSchedulingSettings(
+  payload: UpsertSchedulingSettingsPayload,
+): Promise<SchedulingSettings> {
+  const headers = await authHeaders()
+  return request<SchedulingSettings>('/settings/scheduling', {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(payload),
+  })
 }

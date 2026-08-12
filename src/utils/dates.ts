@@ -51,3 +51,11 @@ export function compareISODates(a?: string | null, b?: string | null): number {
   if (!b) return -1
   return a.localeCompare(b)
 }
+
+export function earliestScheduleDate(
+  ...dates: Array<string | undefined | null>
+): string | undefined {
+  const valid = dates.filter((d): d is string => !!d && /^\d{4}-\d{2}-\d{2}$/.test(d))
+  if (!valid.length) return undefined
+  return [...valid].sort()[0]
+}

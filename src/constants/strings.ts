@@ -7,8 +7,18 @@ export const APP_STRINGS = {
   tabs: {
     search: 'Buscar',
     prospects: 'Prospectos',
-    visits: 'Visitas',
+    visits: 'Por Contactar',
     contacted: 'Contactados',
+  },
+  scheduling: {
+    intervalLabel: 'Intervalo entre citas',
+    intervalHint:
+      'Las horas de visita usan este intervalo y no se permiten citas más cercanas.',
+    intervalOption: (mins: number) => `${mins} minutos`,
+    saving: 'Guardando...',
+    saved: 'Guardado',
+    loadError: 'No se pudo cargar el intervalo de citas',
+    saveError: 'No se pudo guardar el intervalo de citas',
   },
   home: {
     title: 'SisteContact',
@@ -85,7 +95,7 @@ export const APP_STRINGS = {
   prospects: {
     title: 'Prospectos',
     subtitle:
-      'Estado de contacto, agenda de visita y seguimiento de cada comercio.',
+      'Estado de contacto, agenda de llamada o visita y seguimiento de cada comercio.',
     empty:
       'Aún no tienes prospectos. Agrégalos desde los resultados de búsqueda.',
     loading: 'Cargando prospectos...',
@@ -99,18 +109,28 @@ export const APP_STRINGS = {
     outcomeLabel: 'Clasificación',
     saveContact: 'Guardar contacto',
     visitDateLabel: 'Agendar visita',
-    noVisitDate: 'Sin fecha asignada',
+    noVisitDate: 'Sin fecha de visita',
+    visitTimeLabel: 'Hora',
+    visitTimePlaceholder: 'Elige hora',
+    visitTimeRequired: 'Elige una hora de visita.',
+    callDateLabel: 'Agendar llamada',
+    noCallDate: 'Sin fecha de llamada',
+    callTimeLabel: 'Hora',
+    callTimePlaceholder: 'Elige hora',
     saveDate: 'Guardar agenda',
     clearDate: 'Quitar agenda',
+    callDateRequired: 'Elige una fecha de llamada.',
+    callTimeRequired: 'Elige una hora de llamada.',
   },
   visits: {
-    title: 'Visitas',
-    subtitle: 'Agenda visitas y registra el resultado de cada una.',
+    title: 'Por Contactar',
+    subtitle:
+      'Llamadas y visitas agendadas. Contacta y registra el resultado.',
     empty:
-      'No hay prospectos para agendar. Primero agrégalos desde Buscar o Prospectos.',
-    loading: 'Cargando visitas...',
-    error: 'No se pudo cargar la agenda de visitas',
-    filterDateEmpty: 'No hay visitas pendientes para esa fecha.',
+      'No hay citas agendadas. Agenda una llamada o visita desde Prospectos.',
+    loading: 'Cargando agenda...',
+    error: 'No se pudo cargar la agenda',
+    filterDateEmpty: 'No hay citas pendientes para esa fecha.',
     filterDateAll: 'Todas las fechas',
     filterDateToday: 'Hoy',
     filterDateTomorrow: 'Mañana',
@@ -119,11 +139,27 @@ export const APP_STRINGS = {
     sectionToday: 'Hoy',
     sectionOverdue: 'Atrasados',
     sectionUpcoming: 'Próximos días',
-    sectionNoDate: 'Sin visita agendada',
+    sectionNoDate: 'Sin cita agendada',
     visitDateLabel: 'Agendar visita',
-    noVisitDate: 'Sin fecha asignada',
+    noVisitDate: 'Sin fecha de visita',
+    visitTimeLabel: 'Hora',
+    visitTimePlaceholder: 'Elige hora',
+    callDateLabel: 'Agendar llamada',
+    noCallDate: 'Sin fecha de llamada',
+    callTimeLabel: 'Hora',
+    callTimePlaceholder: 'Elige hora',
     saveDate: 'Guardar agenda',
     clearDate: 'Quitar agenda',
+    badgeCall: 'Llamada',
+    badgeVisit: 'Visita',
+    tabAll: 'Todos',
+    tabVisit: 'Visitar',
+    tabCall: 'Llamar',
+    emptyVisit:
+      'No hay visitas agendadas. Agenda una desde Prospectos.',
+    emptyCall:
+      'No hay llamadas agendadas. Agenda una desde Prospectos.',
+    filterChannelEmpty: 'No hay citas en esta pestaña para esa fecha.',
   },
   contacted: {
     title: 'Comercios contactados',
@@ -136,6 +172,7 @@ export const APP_STRINGS = {
   },
   export: {
     xlsx: 'Exportar Excel',
+    pdf: 'Exportar PDF',
   },
   business: {
     openNow: 'Abierto ahora',

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { APP_STRINGS } from '../../constants/strings'
+import { useSchedulingSettings } from '../../context/SchedulingSettingsContext'
 import {
   deleteProspect,
   fetchProspectsList,
@@ -7,7 +8,13 @@ import {
   upsertProspect,
 } from '../../services/api'
 import type { Prospect } from '../../types/api'
-import { formatVisitDate, todayISODate } from '../../utils/dates'
+import { todayISODate } from '../../utils/dates'
+import {
+  buildTimeOptionsFromInterval,
+  defaultTimeForInterval,
+  formatCallDateTime,
+} from '../../utils/callTimes'
+import { exportProspectsPdf } from '../../utils/exportPdf'
 import { exportProspectsXlsx } from '../../utils/exportXlsx'
 import ContactStatusSelect, {
   CONTACT_OUTCOME_OPTIONS,
@@ -42,13 +49,28 @@ function matchesFilter(item: Prospect, filter: StatusFilter): boolean {
 }
 
 function ProspectsPage() {
+  const { intervalMinutes } = useSchedulingSettings()
+  const timeOptions = useMemo(
+    () => buildTimeOptionsFromInterval(intervalMinutes),
+    [intervalMinutes],
+  )
+  const defaultTime = useMemo(
+    () => defaultTimeForInterval(intervalMinutes),
+    [intervalMinutes],
+  )
   const [items, setItems] = useState<Prospect[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
   const [dateBusyId, setDateBusyId] = useState<string | null>(null)
+  const [callBusyId, setCallBusyId] = useState<string | null>(null)
   const [draftDates, setDraftDates] = useState<Record<string, string>>({})
+  const [draftVisitTimes, setDraftVisitTimes] = useState<Record<string, string>>(
+    {},
+  )
+  const [draftCallDates, setDraftCallDates] = useState<Record<string, string>>({})
+  const [draftCallTimes, setDraftCallTimes] = useState<Record<string, string>>({})
   const [draftOutcomes, setDraftOutcomes] = useState<Record<string, ContactOutcome | ''>>({})
   const [draftNotes, setDraftNotes] = useState<Record<string, string>>({})
   const [pendingContactIds, setPendingContactIds] = useState<Set<string>>(
@@ -63,10 +85,16 @@ function ProspectsPage() {
       .then((list) => {
         setItems(list)
         const dates: Record<string, string> = {}
+        const visitTimes: Record<string, string> = {}
+        const callDates: Record<string, string> = {}
+        const callTimes: Record<string, string> = {}
         const outcomes: Record<string, ContactOutcome | ''> = {}
         const notes: Record<string, string> = {}
         for (const item of list) {
           dates[item.place_id] = item.visit_date ?? todayISODate()
+          visitTimes[item.place_id] = item.visit_time ?? defaultTime
+          callDates[item.place_id] = item.call_date ?? todayISODate()
+          callTimes[item.place_id] = item.call_time ?? defaultTime
           outcomes[item.place_id] = normalizeContactOutcome(
             item.contact_outcome,
             item.contact_status,
@@ -74,6 +102,9 @@ function ProspectsPage() {
           notes[item.place_id] = item.contact_notes ?? ''
         }
         setDraftDates(dates)
+        setDraftVisitTimes(visitTimes)
+        setDraftCallDates(callDates)
+        setDraftCallTimes(callTimes)
         setDraftOutcomes(outcomes)
         setDraftNotes(notes)
       })
@@ -85,7 +116,7 @@ function ProspectsPage() {
 
   useEffect(() => {
     load()
-  }, [])
+  }, [defaultTime])
 
   const sortedItems = useMemo(() => {
     return items.filter((i) => matchesFilter(i, filterStatus)).sort(sortProspects)
@@ -212,11 +243,21 @@ function ProspectsPage() {
 
   async function handleSaveVisitDate(item: Prospect) {
     const nextDate = (draftDates[item.place_id] ?? '').trim()
+    const nextTime = (draftVisitTimes[item.place_id] ?? '').trim()
     if (!nextDate) {
       setError(APP_STRINGS.business.visitDateRequired)
       return
     }
-    if (nextDate === (item.visit_date ?? '')) return
+    if (!nextTime) {
+      setError(APP_STRINGS.prospects.visitTimeRequired)
+      return
+    }
+    if (
+      nextDate === (item.visit_date ?? '') &&
+      nextTime === (item.visit_time ?? '')
+    ) {
+      return
+    }
 
     setDateBusyId(item.place_id)
     setError('')
@@ -235,6 +276,7 @@ function ProspectsPage() {
         contact_outcome: item.contact_outcome,
         contact_notes: item.contact_notes,
         visit_date: nextDate,
+        visit_time: nextTime,
       })
       setItems((prev) =>
         prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
@@ -242,6 +284,10 @@ function ProspectsPage() {
       setDraftDates((prev) => ({
         ...prev,
         [item.place_id]: updated.visit_date ?? nextDate,
+      }))
+      setDraftVisitTimes((prev) => ({
+        ...prev,
+        [item.place_id]: updated.visit_time ?? nextTime,
       }))
     } catch (err) {
       setError(
@@ -253,7 +299,7 @@ function ProspectsPage() {
   }
 
   async function handleClearVisitDate(item: Prospect) {
-    if (!item.visit_date) return
+    if (!item.visit_date && !item.visit_time) return
     setDateBusyId(item.place_id)
     setError('')
     try {
@@ -279,12 +325,113 @@ function ProspectsPage() {
         ...prev,
         [item.place_id]: todayISODate(),
       }))
+      setDraftVisitTimes((prev) => ({
+        ...prev,
+        [item.place_id]: defaultTime,
+      }))
     } catch (err) {
       setError(
         err instanceof Error ? err.message : APP_STRINGS.business.prospectError,
       )
     } finally {
       setDateBusyId(null)
+    }
+  }
+
+  async function handleSaveCallDate(item: Prospect) {
+    const nextDate = (draftCallDates[item.place_id] ?? '').trim()
+    const nextTime = (draftCallTimes[item.place_id] ?? '').trim()
+    if (!nextDate) {
+      setError(APP_STRINGS.prospects.callDateRequired)
+      return
+    }
+    if (!nextTime) {
+      setError(APP_STRINGS.prospects.callTimeRequired)
+      return
+    }
+    if (
+      nextDate === (item.call_date ?? '') &&
+      nextTime === (item.call_time ?? '')
+    ) {
+      return
+    }
+
+    setCallBusyId(item.place_id)
+    setError('')
+    try {
+      const updated = await upsertProspect(item.place_id, {
+        name: item.name,
+        address: item.address,
+        phone: item.phone,
+        rating: item.rating,
+        user_rating_count: item.user_rating_count,
+        google_maps_uri: item.google_maps_uri,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        open_now: item.open_now,
+        contact_status: item.contact_status,
+        contact_outcome: item.contact_outcome,
+        contact_notes: item.contact_notes,
+        call_date: nextDate,
+        call_time: nextTime,
+      })
+      setItems((prev) =>
+        prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
+      )
+      setDraftCallDates((prev) => ({
+        ...prev,
+        [item.place_id]: updated.call_date ?? nextDate,
+      }))
+      setDraftCallTimes((prev) => ({
+        ...prev,
+        [item.place_id]: updated.call_time ?? nextTime,
+      }))
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : APP_STRINGS.business.prospectError,
+      )
+    } finally {
+      setCallBusyId(null)
+    }
+  }
+
+  async function handleClearCallDate(item: Prospect) {
+    if (!item.call_date && !item.call_time) return
+    setCallBusyId(item.place_id)
+    setError('')
+    try {
+      const updated = await upsertProspect(item.place_id, {
+        name: item.name,
+        address: item.address,
+        phone: item.phone,
+        rating: item.rating,
+        user_rating_count: item.user_rating_count,
+        google_maps_uri: item.google_maps_uri,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        open_now: item.open_now,
+        contact_status: item.contact_status,
+        contact_outcome: item.contact_outcome,
+        contact_notes: item.contact_notes,
+        clear_call_date: true,
+      })
+      setItems((prev) =>
+        prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
+      )
+      setDraftCallDates((prev) => ({
+        ...prev,
+        [item.place_id]: todayISODate(),
+      }))
+      setDraftCallTimes((prev) => ({
+        ...prev,
+        [item.place_id]: defaultTime,
+      }))
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : APP_STRINGS.business.prospectError,
+      )
+    } finally {
+      setCallBusyId(null)
     }
   }
 
@@ -295,14 +442,24 @@ function ProspectsPage() {
           <h2 className="prospects__title">{APP_STRINGS.prospects.title}</h2>
           <p className="prospects__subtitle">{APP_STRINGS.prospects.subtitle}</p>
         </div>
-        <button
-          type="button"
-          className="prospects__export"
-          onClick={() => exportProspectsXlsx(sortedItems)}
-          disabled={loading || sortedItems.length === 0}
-        >
-          {APP_STRINGS.export.xlsx}
-        </button>
+        <div className="prospects__export-group">
+          <button
+            type="button"
+            className="prospects__export"
+            onClick={() => exportProspectsXlsx(sortedItems)}
+            disabled={loading || sortedItems.length === 0}
+          >
+            {APP_STRINGS.export.xlsx}
+          </button>
+          <button
+            type="button"
+            className="prospects__export prospects__export--pdf"
+            onClick={() => exportProspectsPdf(sortedItems)}
+            disabled={loading || sortedItems.length === 0}
+          >
+            {APP_STRINGS.export.pdf}
+          </button>
+        </div>
       </div>
 
       <div className="prospects__filters" role="group" aria-label="Filtrar por estado">
@@ -350,8 +507,20 @@ function ProspectsPage() {
         <ul className="prospects__list">
           {sortedItems.map((item) => {
             const draft = draftDates[item.place_id] ?? item.visit_date ?? todayISODate()
-            const dirty = draft !== (item.visit_date ?? '')
+            const visitTimeDraft =
+              draftVisitTimes[item.place_id] ?? item.visit_time ?? defaultTime
+            const dirty =
+              draft !== (item.visit_date ?? '') ||
+              visitTimeDraft !== (item.visit_time ?? '')
             const dateBusy = dateBusyId === item.place_id
+            const callDraft =
+              draftCallDates[item.place_id] ?? item.call_date ?? todayISODate()
+            const callTimeDraft =
+              draftCallTimes[item.place_id] ?? item.call_time ?? defaultTime
+            const callDirty =
+              callDraft !== (item.call_date ?? '') ||
+              callTimeDraft !== (item.call_time ?? '')
+            const callBusy = callBusyId === item.place_id
             const isContacted =
               normalizeContactStatus(item.contact_status) === 'contacted' ||
               pendingContactIds.has(item.place_id)
@@ -458,50 +627,151 @@ function ProspectsPage() {
                     </div>
                   )}
 
-                  <div className="prospects__date-row">
-                    <label className="prospects__date-field">
-                      <span>{APP_STRINGS.prospects.visitDateLabel}</span>
-                      <input
-                        type="date"
-                        value={draft}
-                        min={todayISODate()}
-                        onChange={(e) =>
-                          setDraftDates((prev) => ({
-                            ...prev,
-                            [item.place_id]: e.target.value,
-                          }))
-                        }
-                        disabled={dateBusy}
-                      />
-                    </label>
-                    <div className="prospects__date-meta">
-                      <span className="prospects__date-hint">
-                        {item.visit_date
-                          ? formatVisitDate(item.visit_date)
-                          : APP_STRINGS.prospects.noVisitDate}
-                      </span>
-                      {(dirty || !item.visit_date) && (
-                        <button
-                          type="button"
-                          className="prospects__date-save"
-                          onClick={() => handleSaveVisitDate(item)}
-                          disabled={dateBusy || !draft}
-                        >
-                          {dateBusy
-                            ? APP_STRINGS.business.savingVisit
-                            : APP_STRINGS.prospects.saveDate}
-                        </button>
-                      )}
-                      {!!item.visit_date && (
-                        <button
-                          type="button"
-                          className="prospects__date-save"
-                          onClick={() => handleClearVisitDate(item)}
-                          disabled={dateBusy}
-                        >
-                          {APP_STRINGS.prospects.clearDate}
-                        </button>
-                      )}
+                  <div className="prospects__schedule">
+                    <div className="prospects__date-row">
+                      <div className="prospects__datetime-fields">
+                        <label className="prospects__date-field">
+                          <span>{APP_STRINGS.prospects.callDateLabel}</span>
+                          <input
+                            type="date"
+                            value={callDraft}
+                            min={todayISODate()}
+                            onChange={(e) =>
+                              setDraftCallDates((prev) => ({
+                                ...prev,
+                                [item.place_id]: e.target.value,
+                              }))
+                            }
+                            disabled={callBusy}
+                          />
+                        </label>
+                        <label className="prospects__date-field">
+                          <span>{APP_STRINGS.prospects.callTimeLabel}</span>
+                          <select
+                            value={callTimeDraft}
+                            onChange={(e) =>
+                              setDraftCallTimes((prev) => ({
+                                ...prev,
+                                [item.place_id]: e.target.value,
+                              }))
+                            }
+                            disabled={callBusy}
+                          >
+                            {!timeOptions.includes(callTimeDraft) && (
+                              <option value="">
+                                {APP_STRINGS.prospects.callTimePlaceholder}
+                              </option>
+                            )}
+                            {timeOptions.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      <div className="prospects__date-meta">
+                        <span className="prospects__date-hint">
+                          {item.call_date
+                            ? formatCallDateTime(item.call_date, item.call_time)
+                            : APP_STRINGS.prospects.noCallDate}
+                        </span>
+                        {(callDirty || !item.call_date) && (
+                          <button
+                            type="button"
+                            className="prospects__date-save"
+                            onClick={() => handleSaveCallDate(item)}
+                            disabled={callBusy || !callDraft || !callTimeDraft}
+                          >
+                            {callBusy
+                              ? APP_STRINGS.business.savingVisit
+                              : APP_STRINGS.prospects.saveDate}
+                          </button>
+                        )}
+                        {!!item.call_date && (
+                          <button
+                            type="button"
+                            className="prospects__date-save"
+                            onClick={() => handleClearCallDate(item)}
+                            disabled={callBusy}
+                          >
+                            {APP_STRINGS.prospects.clearDate}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="prospects__date-row">
+                      <div className="prospects__datetime-fields">
+                        <label className="prospects__date-field">
+                          <span>{APP_STRINGS.prospects.visitDateLabel}</span>
+                          <input
+                            type="date"
+                            value={draft}
+                            min={todayISODate()}
+                            onChange={(e) =>
+                              setDraftDates((prev) => ({
+                                ...prev,
+                                [item.place_id]: e.target.value,
+                              }))
+                            }
+                            disabled={dateBusy}
+                          />
+                        </label>
+                        <label className="prospects__date-field">
+                          <span>{APP_STRINGS.prospects.visitTimeLabel}</span>
+                          <select
+                            value={visitTimeDraft}
+                            onChange={(e) =>
+                              setDraftVisitTimes((prev) => ({
+                                ...prev,
+                                [item.place_id]: e.target.value,
+                              }))
+                            }
+                            disabled={dateBusy}
+                          >
+                            {!timeOptions.includes(visitTimeDraft) && (
+                              <option value="">
+                                {APP_STRINGS.prospects.visitTimePlaceholder}
+                              </option>
+                            )}
+                            {timeOptions.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      <div className="prospects__date-meta">
+                        <span className="prospects__date-hint">
+                          {item.visit_date
+                            ? formatCallDateTime(item.visit_date, item.visit_time)
+                            : APP_STRINGS.prospects.noVisitDate}
+                        </span>
+                        {(dirty || !item.visit_date) && (
+                          <button
+                            type="button"
+                            className="prospects__date-save"
+                            onClick={() => handleSaveVisitDate(item)}
+                            disabled={dateBusy || !draft || !visitTimeDraft}
+                          >
+                            {dateBusy
+                              ? APP_STRINGS.business.savingVisit
+                              : APP_STRINGS.prospects.saveDate}
+                          </button>
+                        )}
+                        {!!item.visit_date && (
+                          <button
+                            type="button"
+                            className="prospects__date-save"
+                            onClick={() => handleClearVisitDate(item)}
+                            disabled={dateBusy}
+                          >
+                            {APP_STRINGS.prospects.clearDate}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>

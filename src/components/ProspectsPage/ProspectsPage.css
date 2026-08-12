@@ -88,8 +88,14 @@
   gap: 0.5rem 0.75rem;
 }
 
-.prospects__export {
+.prospects__export-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
   flex-shrink: 0;
+}
+
+.prospects__export {
   padding: 0.55rem 0.9rem;
   min-height: 2.5rem;
   font-size: 0.85rem;
@@ -103,6 +109,15 @@
 
 .prospects__export:hover:not(:disabled) {
   background: #f0fff4;
+}
+
+.prospects__export--pdf {
+  color: #1a365d;
+  border-color: #90cdf4;
+}
+
+.prospects__export--pdf:hover:not(:disabled) {
+  background: #ebf8ff;
 }
 
 .prospects__export:disabled {
@@ -337,6 +352,37 @@
 .prospects__section--overdue .prospects__section-count {
   color: #9b2c2c;
   background: #fed7d7;
+}
+
+.prospects__schedule {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin-top: 0.35rem;
+}
+
+.prospects__datetime-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.75rem;
+  align-items: flex-end;
+}
+
+.prospects__date-field select {
+  max-width: 8rem;
+  font: inherit;
+  font-weight: 400;
+  padding: 0.45rem 0.55rem;
+  border: 1px solid #cbd5e0;
+  border-radius: 8px;
+  background: #fff;
+  min-height: 2.35rem;
+}
+
+.prospects__date-field select:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
 }
 
 .prospects__date-row {

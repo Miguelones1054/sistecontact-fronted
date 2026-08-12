@@ -111,6 +111,9 @@ export interface Prospect {
   contact_outcome?: string
   contact_notes?: string
   visit_date?: string
+  visit_time?: string
+  call_date?: string
+  call_time?: string
   created_at: string
   updated_at: string
 }
@@ -129,7 +132,11 @@ export interface UpsertProspectPayload {
   contact_outcome?: string
   contact_notes?: string
   visit_date?: string
+  visit_time?: string
   clear_visit_date?: boolean
+  call_date?: string
+  call_time?: string
+  clear_call_date?: boolean
 }
 
 export interface ContactStatusRecord {
@@ -148,4 +155,13 @@ export interface UpsertContactStatusPayload {
   contact_status: string
   contact_outcome?: string
   contact_notes?: string
+}
+
+export interface SchedulingSettings {
+  appointment_interval_minutes: number
+  updated_at?: string
+}
+
+export interface UpsertSchedulingSettingsPayload {
+  appointment_interval_minutes: number
 }

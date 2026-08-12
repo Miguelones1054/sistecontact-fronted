@@ -20,6 +20,59 @@
   font-size: 0.92rem;
 }
 
+.visits__subtabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0 0 0.9rem;
+  padding: 0.25rem;
+  background: #edf2f7;
+  border-radius: 10px;
+}
+
+.visits__subtab {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.55rem 0.4rem;
+  min-height: 2.5rem;
+  font-size: clamp(0.78rem, 3vw, 0.92rem);
+  font-weight: 700;
+  color: #4a5568;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.visits__subtab:hover {
+  color: #2d3748;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.visits__subtab--active {
+  color: #1a365d;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.visits__subtab-count {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  color: #4a5568;
+}
+
+.visits__subtab--active .visits__subtab-count {
+  background: #bee3f8;
+  color: #2a4365;
+}
+
 .visits__filters {
   display: flex;
   flex-wrap: wrap;
@@ -86,6 +139,30 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.5rem 0.75rem;
+}
+
+.visits__channel-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.visits__channel-badge {
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  letter-spacing: 0.01em;
+}
+
+.visits__channel-badge--call {
+  background: #d6f5d6;
+  color: #22543d;
+}
+
+.visits__channel-badge--visit {
+  background: #bee3f8;
+  color: #2a4365;
 }
 
 .visits__export {
@@ -282,6 +359,13 @@
   border-top: 1px solid #edf2f7;
 }
 
+.visits__datetime-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.75rem;
+  align-items: flex-end;
+}
+
 .visits__date-field {
   display: flex;
   flex-direction: column;
@@ -291,16 +375,24 @@
   color: #4a5568;
 }
 
-.visits__date-field input {
+.visits__date-field input,
+.visits__date-field select {
   max-width: 11.5rem;
   font: inherit;
   font-weight: 400;
   padding: 0.45rem 0.55rem;
   border: 1px solid #cbd5e0;
   border-radius: 8px;
+  background: #fff;
+  min-height: 2.35rem;
 }
 
-.visits__date-field input:focus {
+.visits__date-field select {
+  max-width: 8rem;
+}
+
+.visits__date-field input:focus,
+.visits__date-field select:focus {
   outline: none;
   border-color: #2b6cb0;
   box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);

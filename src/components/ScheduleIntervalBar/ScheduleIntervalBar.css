@@ -1,0 +1,76 @@
+.schedule-interval-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem 0.85rem;
+  margin: 0 0 1rem;
+  padding: 0.7rem 0.85rem;
+  background: linear-gradient(160deg, #f7fafc 0%, #edf2f7 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+}
+
+.schedule-interval-bar__field {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.55rem;
+}
+
+.schedule-interval-bar__label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.schedule-interval-bar__select {
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #1a365d;
+  padding: 0.4rem 0.55rem;
+  min-height: 2.3rem;
+  border: 1px solid #90cdf4;
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.schedule-interval-bar__select:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+}
+
+.schedule-interval-bar__select:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.schedule-interval-bar__hint {
+  margin: 0;
+  flex: 1 1 12rem;
+  font-size: 0.78rem;
+  color: #4a5568;
+  line-height: 1.35;
+}
+
+.schedule-interval-bar__status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.schedule-interval-bar__status--ok {
+  color: #276749;
+}
+
+.schedule-interval-bar__error {
+  margin: 0;
+  width: 100%;
+  font-size: 0.8rem;
+  color: #742a2a;
+  background: #fed7d7;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+}

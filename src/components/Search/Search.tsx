@@ -5,6 +5,7 @@ import BusinessList from '../BusinessList/BusinessList'
 import { searchBusinesses } from '../../services/api'
 import { APP_STRINGS } from '../../constants/strings'
 import type { Business, Zone } from '../../types/api'
+import { exportSearchXlsx } from '../../utils/exportXlsx'
 import './Search.css'
 
 const DEFAULT_RADIUS_KM = 2
@@ -138,14 +139,30 @@ function Search() {
       </form>
 
       {hasSearched && !loading && resultZone && (
-        <h2 className="search__results-title">
-          {APP_STRINGS.search.resultsTitle(
-            results.length,
-            type.trim(),
-            resultZone.name,
-            resultRadiusKm,
-          )}
-        </h2>
+        <div className="search__results-header">
+          <h2 className="search__results-title">
+            {APP_STRINGS.search.resultsTitle(
+              results.length,
+              type.trim(),
+              resultZone.name,
+              resultRadiusKm,
+            )}
+          </h2>
+          <button
+            type="button"
+            className="search__export"
+            onClick={() =>
+              exportSearchXlsx(results, {
+                type: type.trim(),
+                zone: resultZone.name,
+                radiusKm: resultRadiusKm,
+              })
+            }
+            disabled={results.length === 0}
+          >
+            {APP_STRINGS.export.xlsx}
+          </button>
+        </div>
       )}
 
       {loading && <p className="search__loading">{APP_STRINGS.search.loading}</p>}
