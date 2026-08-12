@@ -536,9 +536,15 @@ function ProspectsPage() {
               draftOutcome !== savedOutcome ||
               draftNote !== (item.contact_notes ?? '')
             const statusBusy = statusBusyId === item.place_id
+            const hasCall = !!item.call_date
+            const hasVisit = !!item.visit_date
+            const isScheduled = hasCall || hasVisit
 
             return (
-              <li key={item.place_id} className="prospects__card">
+              <li
+                key={item.place_id}
+                className={`prospects__card${isScheduled ? ' prospects__card--scheduled' : ''}`}
+              >
                 <div className="prospects__card-main">
                   <div className="prospects__card-top">
                     <h3 className="prospects__name">{item.name}</h3>
@@ -548,6 +554,29 @@ function ProspectsPage() {
                       onChange={(status) => handleContactStatus(item, status)}
                     />
                   </div>
+                  {isScheduled && (
+                    <div className="prospects__schedule-badges">
+                      {hasCall && (
+                        <span className="prospects__schedule-badge prospects__schedule-badge--call">
+                          {APP_STRINGS.prospects.badgeCall}
+                          <span className="prospects__schedule-badge-when">
+                            {formatCallDateTime(item.call_date, item.call_time)}
+                          </span>
+                        </span>
+                      )}
+                      {hasVisit && (
+                        <span className="prospects__schedule-badge prospects__schedule-badge--visit">
+                          {APP_STRINGS.prospects.badgeVisit}
+                          <span className="prospects__schedule-badge-when">
+                            {formatCallDateTime(item.visit_date, item.visit_time)}
+                          </span>
+                        </span>
+                      )}
+                      <span className="prospects__scheduled-pill">
+                        {APP_STRINGS.prospects.scheduledLabel}
+                      </span>
+                    </div>
+                  )}
                   {isContacted && savedOutcome && !contactDirty && (
                     <p className="prospects__outcome-summary">
                       {contactOutcomeLabel(savedOutcome)}
@@ -628,7 +657,9 @@ function ProspectsPage() {
                   )}
 
                   <div className="prospects__schedule">
-                    <div className="prospects__date-row">
+                    <div
+                      className={`prospects__date-row${hasCall ? ' prospects__date-row--scheduled' : ''}`}
+                    >
                       <div className="prospects__datetime-fields">
                         <label className="prospects__date-field">
                           <span>{APP_STRINGS.prospects.callDateLabel}</span>
@@ -701,7 +732,9 @@ function ProspectsPage() {
                       </div>
                     </div>
 
-                    <div className="prospects__date-row">
+                    <div
+                      className={`prospects__date-row${hasVisit ? ' prospects__date-row--scheduled' : ''}`}
+                    >
                       <div className="prospects__datetime-fields">
                         <label className="prospects__date-field">
                           <span>{APP_STRINGS.prospects.visitDateLabel}</span>

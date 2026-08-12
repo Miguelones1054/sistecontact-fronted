@@ -121,6 +121,9 @@ export const APP_STRINGS = {
     clearDate: 'Quitar agenda',
     callDateRequired: 'Elige una fecha de llamada.',
     callTimeRequired: 'Elige una hora de llamada.',
+    scheduledLabel: 'Agendado',
+    badgeCall: 'Llamada',
+    badgeVisit: 'Visita',
   },
   visits: {
     title: 'Por Contactar',
@@ -160,6 +163,10 @@ export const APP_STRINGS = {
     emptyCall:
       'No hay llamadas agendadas. Agenda una desde Prospectos.',
     filterChannelEmpty: 'No hay citas en esta pestaña para esa fecha.',
+    expandCard: 'Ver detalle',
+    collapseCard: 'Ocultar detalle',
+    scheduledLabel: 'Agendado',
+    unscheduledLabel: 'Sin agenda',
   },
   contacted: {
     title: 'Comercios contactados',

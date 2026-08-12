@@ -93,6 +93,16 @@ function VisitsPage() {
   const [filterDate, setFilterDate] = useState<DateFilter>('all')
   const [filterChannel, setFilterChannel] = useState<ChannelFilter>('all')
   const [customDate, setCustomDate] = useState(todayISODate())
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
+
+  function toggleExpanded(placeId: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(placeId)) next.delete(placeId)
+      else next.add(placeId)
+      return next
+    })
+  }
 
   const resolvedDateFilter = useMemo(() => {
     if (filterDate === 'today') return todayISODate()
@@ -396,218 +406,284 @@ function VisitsPage() {
       callDraft !== (item.call_date ?? '') ||
       callTimeDraft !== (item.call_time ?? '')
     const callBusy = callBusyId === item.place_id
+    const expanded = expandedIds.has(item.place_id)
+    const hasCall = !!item.call_date
+    const hasVisit = !!item.visit_date
+    const isScheduled =
+      (showCall && hasCall) || (showVisit && hasVisit) || (!showCall && !showVisit && (hasCall || hasVisit))
     const statusLabel = contactStatusLabel(item.contact_status)
     const outcomeLabel = contactOutcomeLabel(
       normalizeContactOutcome(item.contact_outcome, item.contact_status),
     )
 
     return (
-      <li key={item.place_id} className="visits__card">
-        <div className="visits__card-main">
-          <div className="visits__card-top">
-            <h3 className="visits__name">{item.name}</h3>
-            <span
-              className={`visits__status-badge visits__status-badge--${normalizeContactStatus(item.contact_status)}`}
-            >
-              {outcomeLabel || statusLabel}
-            </span>
+      <li
+        key={item.place_id}
+        className={`visits__card${expanded ? ' visits__card--expanded' : ''}${
+          isScheduled ? ' visits__card--scheduled' : ' visits__card--unscheduled'
+        }`}
+      >
+        <button
+          type="button"
+          className="visits__card-summary"
+          onClick={() => toggleExpanded(item.place_id)}
+          aria-expanded={expanded}
+          aria-controls={`visits-detail-${item.place_id}`}
+        >
+          <div className="visits__card-summary-main">
+            <div className="visits__card-summary-top">
+              <h3 className="visits__name">{item.name}</h3>
+              {isScheduled ? (
+                <span className="visits__scheduled-pill">
+                  {APP_STRINGS.visits.scheduledLabel}
+                </span>
+              ) : (
+                <span className="visits__scheduled-pill visits__scheduled-pill--muted">
+                  {APP_STRINGS.visits.unscheduledLabel}
+                </span>
+              )}
+            </div>
+            <div className="visits__channel-badges">
+              {showCall && hasCall && (
+                <span className="visits__channel-badge visits__channel-badge--call">
+                  {APP_STRINGS.visits.badgeCall}
+                  <span className="visits__channel-badge-when">
+                    {formatCallDateTime(item.call_date, item.call_time)}
+                  </span>
+                </span>
+              )}
+              {showVisit && hasVisit && (
+                <span className="visits__channel-badge visits__channel-badge--visit">
+                  {APP_STRINGS.visits.badgeVisit}
+                  <span className="visits__channel-badge-when">
+                    {formatCallDateTime(item.visit_date, item.visit_time)}
+                  </span>
+                </span>
+              )}
+              {showCall && !hasCall && filterChannel === 'call' && (
+                <span className="visits__channel-badge visits__channel-badge--empty">
+                  {APP_STRINGS.visits.badgeCall}: {APP_STRINGS.visits.noCallDate}
+                </span>
+              )}
+              {showVisit && !hasVisit && filterChannel === 'visit' && (
+                <span className="visits__channel-badge visits__channel-badge--empty">
+                  {APP_STRINGS.visits.badgeVisit}: {APP_STRINGS.visits.noVisitDate}
+                </span>
+              )}
+              {filterChannel === 'all' && !hasCall && !hasVisit && (
+                <span className="visits__channel-badge visits__channel-badge--empty">
+                  {APP_STRINGS.visits.unscheduledLabel}
+                </span>
+              )}
+            </div>
           </div>
-          <div className="visits__channel-badges">
-            {showCall && item.call_date && (
-              <span className="visits__channel-badge visits__channel-badge--call">
-                {APP_STRINGS.visits.badgeCall}:{' '}
-                {formatCallDateTime(item.call_date, item.call_time)}
-              </span>
+          <span className="visits__card-chevron" aria-hidden="true">
+            {expanded ? '▾' : '▸'}
+          </span>
+          <span className="visits__sr-only">
+            {expanded
+              ? APP_STRINGS.visits.collapseCard
+              : APP_STRINGS.visits.expandCard}
+          </span>
+        </button>
+
+        {expanded && (
+          <div
+            id={`visits-detail-${item.place_id}`}
+            className="visits__card-detail"
+          >
+            <div className="visits__card-main">
+              <div className="visits__card-top">
+                <span
+                  className={`visits__status-badge visits__status-badge--${normalizeContactStatus(item.contact_status)}`}
+                >
+                  {outcomeLabel || statusLabel}
+                </span>
+              </div>
+              <p className="visits__address">{item.address}</p>
+              {item.phone && (
+                <a className="visits__phone" href={`tel:${item.phone}`}>
+                  {item.phone}
+                </a>
+              )}
+              {item.google_maps_uri && (
+                <a
+                  className="visits__link"
+                  href={item.google_maps_uri}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {APP_STRINGS.business.viewOnMaps}
+                </a>
+              )}
+
+              {showCall && (
+                <div className="visits__date-row">
+                  <div className="visits__datetime-fields">
+                    <label className="visits__date-field">
+                      <span>{APP_STRINGS.visits.callDateLabel}</span>
+                      <input
+                        type="date"
+                        value={callDraft}
+                        onChange={(e) =>
+                          setDraftCallDates((prev) => ({
+                            ...prev,
+                            [item.place_id]: e.target.value,
+                          }))
+                        }
+                        disabled={callBusy}
+                      />
+                    </label>
+                    <label className="visits__date-field">
+                      <span>{APP_STRINGS.visits.callTimeLabel}</span>
+                      <select
+                        value={callTimeDraft}
+                        onChange={(e) =>
+                          setDraftCallTimes((prev) => ({
+                            ...prev,
+                            [item.place_id]: e.target.value,
+                          }))
+                        }
+                        disabled={callBusy}
+                      >
+                        {!timeOptions.includes(callTimeDraft) && (
+                          <option value="">
+                            {APP_STRINGS.visits.callTimePlaceholder}
+                          </option>
+                        )}
+                        {timeOptions.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="visits__date-meta">
+                    <span className="visits__date-hint">
+                      {item.call_date
+                        ? formatCallDateTime(item.call_date, item.call_time)
+                        : APP_STRINGS.visits.noCallDate}
+                    </span>
+                    {callDirty && (
+                      <button
+                        type="button"
+                        className="visits__date-save"
+                        onClick={() => handleSaveCallDate(item)}
+                        disabled={callBusy || !callDraft || !callTimeDraft}
+                      >
+                        {callBusy
+                          ? APP_STRINGS.business.savingVisit
+                          : APP_STRINGS.visits.saveDate}
+                      </button>
+                    )}
+                    {!!item.call_date && (
+                      <button
+                        type="button"
+                        className="visits__date-save"
+                        onClick={() => handleClearCallDate(item)}
+                        disabled={callBusy}
+                      >
+                        {APP_STRINGS.visits.clearDate}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {showVisit && (
+                <div className="visits__date-row">
+                  <div className="visits__datetime-fields">
+                    <label className="visits__date-field">
+                      <span>{APP_STRINGS.visits.visitDateLabel}</span>
+                      <input
+                        type="date"
+                        value={draft}
+                        onChange={(e) =>
+                          setDraftDates((prev) => ({
+                            ...prev,
+                            [item.place_id]: e.target.value,
+                          }))
+                        }
+                        disabled={dateBusy}
+                      />
+                    </label>
+                    <label className="visits__date-field">
+                      <span>{APP_STRINGS.visits.visitTimeLabel}</span>
+                      <select
+                        value={visitTimeDraft}
+                        onChange={(e) =>
+                          setDraftVisitTimes((prev) => ({
+                            ...prev,
+                            [item.place_id]: e.target.value,
+                          }))
+                        }
+                        disabled={dateBusy}
+                      >
+                        {!timeOptions.includes(visitTimeDraft) && (
+                          <option value="">
+                            {APP_STRINGS.visits.visitTimePlaceholder}
+                          </option>
+                        )}
+                        {timeOptions.map((t) => (
+                          <option key={t} value={t}>
+                            {t}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
+                  <div className="visits__date-meta">
+                    <span className="visits__date-hint">
+                      {item.visit_date
+                        ? formatCallDateTime(item.visit_date, item.visit_time)
+                        : APP_STRINGS.visits.noVisitDate}
+                    </span>
+                    {dirty && (
+                      <button
+                        type="button"
+                        className="visits__date-save"
+                        onClick={() => handleSaveVisitDate(item)}
+                        disabled={dateBusy || !draft || !visitTimeDraft}
+                      >
+                        {dateBusy
+                          ? APP_STRINGS.business.savingVisit
+                          : APP_STRINGS.visits.saveDate}
+                      </button>
+                    )}
+                    {!!item.visit_date && (
+                      <button
+                        type="button"
+                        className="visits__date-save"
+                        onClick={() => handleClearVisitDate(item)}
+                        disabled={dateBusy}
+                      >
+                        {APP_STRINGS.visits.clearDate}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {showVisit && (
+              <VisitPanel
+                target={{
+                  place_id: item.place_id,
+                  name: item.name,
+                  address: item.address,
+                  phone: item.phone,
+                  rating: item.rating,
+                  user_rating_count: item.user_rating_count,
+                  google_maps_uri: item.google_maps_uri,
+                  latitude: item.latitude,
+                  longitude: item.longitude,
+                  open_now: item.open_now,
+                }}
+                onVisitSaved={handleVisitSaved}
+              />
             )}
-            {showVisit && item.visit_date && (
-              <span className="visits__channel-badge visits__channel-badge--visit">
-                {APP_STRINGS.visits.badgeVisit}:{' '}
-                {formatCallDateTime(item.visit_date, item.visit_time)}
-              </span>
-            )}
           </div>
-          <p className="visits__address">{item.address}</p>
-          {item.phone && (
-            <a className="visits__phone" href={`tel:${item.phone}`}>
-              {item.phone}
-            </a>
-          )}
-          {item.google_maps_uri && (
-            <a
-              className="visits__link"
-              href={item.google_maps_uri}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {APP_STRINGS.business.viewOnMaps}
-            </a>
-          )}
-
-          {showCall && (
-          <div className="visits__date-row">
-            <div className="visits__datetime-fields">
-              <label className="visits__date-field">
-                <span>{APP_STRINGS.visits.callDateLabel}</span>
-                <input
-                  type="date"
-                  value={callDraft}
-                  onChange={(e) =>
-                    setDraftCallDates((prev) => ({
-                      ...prev,
-                      [item.place_id]: e.target.value,
-                    }))
-                  }
-                  disabled={callBusy}
-                />
-              </label>
-              <label className="visits__date-field">
-                <span>{APP_STRINGS.visits.callTimeLabel}</span>
-                <select
-                  value={callTimeDraft}
-                  onChange={(e) =>
-                    setDraftCallTimes((prev) => ({
-                      ...prev,
-                      [item.place_id]: e.target.value,
-                    }))
-                  }
-                  disabled={callBusy}
-                >
-                  {!timeOptions.includes(callTimeDraft) && (
-                    <option value="">
-                      {APP_STRINGS.visits.callTimePlaceholder}
-                    </option>
-                  )}
-                  {timeOptions.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="visits__date-meta">
-              <span className="visits__date-hint">
-                {item.call_date
-                  ? formatCallDateTime(item.call_date, item.call_time)
-                  : APP_STRINGS.visits.noCallDate}
-              </span>
-              {callDirty && (
-                <button
-                  type="button"
-                  className="visits__date-save"
-                  onClick={() => handleSaveCallDate(item)}
-                  disabled={callBusy || !callDraft || !callTimeDraft}
-                >
-                  {callBusy
-                    ? APP_STRINGS.business.savingVisit
-                    : APP_STRINGS.visits.saveDate}
-                </button>
-              )}
-              {!!item.call_date && (
-                <button
-                  type="button"
-                  className="visits__date-save"
-                  onClick={() => handleClearCallDate(item)}
-                  disabled={callBusy}
-                >
-                  {APP_STRINGS.visits.clearDate}
-                </button>
-              )}
-            </div>
-          </div>
-          )}
-
-          {showVisit && (
-          <div className="visits__date-row">
-            <div className="visits__datetime-fields">
-              <label className="visits__date-field">
-                <span>{APP_STRINGS.visits.visitDateLabel}</span>
-                <input
-                  type="date"
-                  value={draft}
-                  onChange={(e) =>
-                    setDraftDates((prev) => ({
-                      ...prev,
-                      [item.place_id]: e.target.value,
-                    }))
-                  }
-                  disabled={dateBusy}
-                />
-              </label>
-              <label className="visits__date-field">
-                <span>{APP_STRINGS.visits.visitTimeLabel}</span>
-                <select
-                  value={visitTimeDraft}
-                  onChange={(e) =>
-                    setDraftVisitTimes((prev) => ({
-                      ...prev,
-                      [item.place_id]: e.target.value,
-                    }))
-                  }
-                  disabled={dateBusy}
-                >
-                  {!timeOptions.includes(visitTimeDraft) && (
-                    <option value="">
-                      {APP_STRINGS.visits.visitTimePlaceholder}
-                    </option>
-                  )}
-                  {timeOptions.map((t) => (
-                    <option key={t} value={t}>
-                      {t}
-                    </option>
-                  ))}
-                </select>
-              </label>
-            </div>
-            <div className="visits__date-meta">
-              <span className="visits__date-hint">
-                {item.visit_date
-                  ? formatCallDateTime(item.visit_date, item.visit_time)
-                  : APP_STRINGS.visits.noVisitDate}
-              </span>
-              {dirty && (
-                <button
-                  type="button"
-                  className="visits__date-save"
-                  onClick={() => handleSaveVisitDate(item)}
-                  disabled={dateBusy || !draft || !visitTimeDraft}
-                >
-                  {dateBusy
-                    ? APP_STRINGS.business.savingVisit
-                    : APP_STRINGS.visits.saveDate}
-                </button>
-              )}
-              {!!item.visit_date && (
-                <button
-                  type="button"
-                  className="visits__date-save"
-                  onClick={() => handleClearVisitDate(item)}
-                  disabled={dateBusy}
-                >
-                  {APP_STRINGS.visits.clearDate}
-                </button>
-              )}
-            </div>
-          </div>
-          )}
-        </div>
-
-        {showVisit && (
-          <VisitPanel
-            target={{
-              place_id: item.place_id,
-              name: item.name,
-              address: item.address,
-              phone: item.phone,
-              rating: item.rating,
-              user_rating_count: item.user_rating_count,
-              google_maps_uri: item.google_maps_uri,
-              latitude: item.latitude,
-              longitude: item.longitude,
-              open_now: item.open_now,
-            }}
-            onVisitSaved={handleVisitSaved}
-          />
         )}
       </li>
     )

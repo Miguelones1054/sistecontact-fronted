@@ -164,6 +164,61 @@
   flex-direction: column;
   gap: 0.75rem;
   min-width: 0;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.prospects__card--scheduled {
+  border-color: #68d391;
+  background: linear-gradient(90deg, #f0fff4 0, #f0fff4 4px, #fff 4px);
+  box-shadow: 0 1px 2px rgba(56, 161, 105, 0.08);
+}
+
+.prospects__schedule-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.15rem 0 0.1rem;
+}
+
+.prospects__schedule-badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.4rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+}
+
+.prospects__schedule-badge-when {
+  font-weight: 600;
+  opacity: 0.95;
+  text-transform: capitalize;
+}
+
+.prospects__schedule-badge--call {
+  background: #d6f5d6;
+  color: #22543d;
+}
+
+.prospects__schedule-badge--visit {
+  background: #bee3f8;
+  color: #2a4365;
+}
+
+.prospects__scheduled-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #22543d;
+  background: #c6f6d5;
+  border-radius: 999px;
 }
 
 .prospects__card-main {
@@ -392,6 +447,20 @@
   margin-top: 0.45rem;
   padding-top: 0.55rem;
   border-top: 1px solid #edf2f7;
+}
+
+.prospects__date-row--scheduled {
+  padding: 0.55rem 0.65rem 0.65rem;
+  margin-top: 0.55rem;
+  border-top: none;
+  border-radius: 10px;
+  background: #f0fff4;
+  border: 1px solid #c6f6d5;
+}
+
+.prospects__date-row--scheduled .prospects__date-hint {
+  color: #276749;
+  font-weight: 600;
 }
 
 .prospects__date-field {
