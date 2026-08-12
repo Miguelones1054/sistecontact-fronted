@@ -9,6 +9,12 @@ import {
 } from '../../services/api'
 import type { GlobalScheduledVisit, GlobalVisitor, Visit } from '../../types/api'
 import { formatVisitDate } from '../../utils/dates'
+import {
+  CONTACT_OUTCOME_OPTIONS,
+  contactOutcomeLabel,
+  normalizeContactOutcome,
+  type ContactOutcome,
+} from '../ContactStatusSelect/ContactStatusSelect'
 import './VisitPanel.css'
 
 export interface VisitTarget {
@@ -52,7 +58,7 @@ function VisitPanel({
   const { user } = useAuth()
   const [editing, setEditing] = useState(false)
   const [notes, setNotes] = useState('')
-  const [visitResult, setVisitResult] = useState('')
+  const [visitResult, setVisitResult] = useState<ContactOutcome | ''>('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [showVisitors, setShowVisitors] = useState(false)
@@ -99,12 +105,16 @@ function VisitPanel({
   function openForm() {
     setEditing(true)
     setNotes(visit?.notes ?? '')
-    setVisitResult(visit?.visit_result ?? '')
+    setVisitResult(normalizeContactOutcome(visit?.visit_result, null))
     setError('')
     setShowVisitors(false)
   }
 
   async function handleSave() {
+    if (!visitResult) {
+      setError(APP_STRINGS.business.resultRequired)
+      return
+    }
     setSaving(true)
     setError('')
     try {
@@ -148,14 +158,16 @@ function VisitPanel({
     }
   }
 
+  const savedResultLabel = contactOutcomeLabel(visit?.visit_result)
+
   return (
     <div className="visit-panel">
       {visit?.visited && !editing && (
         <div className="visit-panel__summary">
-          {visit.visit_result && (
+          {savedResultLabel && (
             <p className="visit-panel__line">
               <strong>{APP_STRINGS.business.resultLabel}:</strong>{' '}
-              {visit.visit_result}
+              {savedResultLabel}
             </p>
           )}
           {visit.notes && (
@@ -194,16 +206,24 @@ function VisitPanel({
         </div>
       ) : (
         <div className="visit-panel__form">
-          <label className="visit-panel__field">
-            <span>{APP_STRINGS.business.resultLabel}</span>
-            <input
-              type="text"
-              value={visitResult}
-              placeholder={APP_STRINGS.business.resultPlaceholder}
-              onChange={(e) => setVisitResult(e.target.value)}
-              disabled={saving}
-            />
-          </label>
+          <fieldset className="visit-panel__outcome" disabled={saving}>
+            <legend>{APP_STRINGS.business.resultLabel}</legend>
+            {CONTACT_OUTCOME_OPTIONS.map((opt) => (
+              <label
+                key={opt.value}
+                className={`visit-panel__outcome-opt ${opt.className}`}
+              >
+                <input
+                  type="radio"
+                  name={`visit-outcome-${target.place_id}`}
+                  value={opt.value}
+                  checked={visitResult === opt.value}
+                  onChange={() => setVisitResult(opt.value)}
+                />
+                {opt.label}
+              </label>
+            ))}
+          </fieldset>
           <label className="visit-panel__field">
             <span>{APP_STRINGS.business.notesLabel}</span>
             <textarea
@@ -335,7 +355,7 @@ function VisitPanel({
                       {v.visit_result && (
                         <span>
                           {APP_STRINGS.business.whoVisitedResult}:{' '}
-                          {v.visit_result}
+                          {contactOutcomeLabel(v.visit_result)}
                         </span>
                       )}
                       <span>{formatVisitorDate(v.updated_at)}</span>

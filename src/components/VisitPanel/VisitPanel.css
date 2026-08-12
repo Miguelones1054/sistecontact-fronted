@@ -31,6 +31,37 @@
   border-radius: 8px;
 }
 
+.visit-panel__outcome {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.visit-panel__outcome legend {
+  padding: 0;
+  margin-bottom: 0.35rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.visit-panel__outcome-opt {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+}
+
+.visit-panel__outcome-opt input {
+  accent-color: #2b6cb0;
+}
+
 .visit-panel__field {
   display: flex;
   flex-direction: column;

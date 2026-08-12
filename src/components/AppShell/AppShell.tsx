@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { APP_STRINGS } from '../../constants/strings'
+import ProfilePanel from '../ProfilePanel/ProfilePanel'
 import './AppShell.css'
 
 function AppShell() {
   const { user, logout } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -21,14 +23,23 @@ function AppShell() {
     <div className="app-shell">
       <div className="app-shell__topbar">
         <span className="app-shell__user">{user?.email}</span>
-        <button
-          type="button"
-          className="app-shell__logout"
-          onClick={handleLogout}
-          disabled={loggingOut}
-        >
-          {APP_STRINGS.login.logout}
-        </button>
+        <div className="app-shell__actions">
+          <button
+            type="button"
+            className="app-shell__logout"
+            onClick={handleLogout}
+            disabled={loggingOut}
+          >
+            {APP_STRINGS.login.logout}
+          </button>
+          <button
+            type="button"
+            className="app-shell__profile"
+            onClick={() => setProfileOpen(true)}
+          >
+            {APP_STRINGS.profile.button}
+          </button>
+        </div>
       </div>
 
       <header className="app-shell__header">
@@ -64,18 +75,20 @@ function AppShell() {
           {APP_STRINGS.tabs.visits}
         </NavLink>
         <NavLink
-          to="/visitados"
+          to="/contactados"
           className={({ isActive }) =>
             `app-shell__tab${isActive ? ' app-shell__tab--active' : ''}`
           }
         >
-          {APP_STRINGS.tabs.visited}
+          {APP_STRINGS.tabs.contacted}
         </NavLink>
       </nav>
 
       <div className="app-shell__content">
         <Outlet />
       </div>
+
+      <ProfilePanel open={profileOpen} onClose={() => setProfileOpen(false)} />
     </div>
   )
 }

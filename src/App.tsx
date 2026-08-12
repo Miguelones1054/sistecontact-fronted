@@ -6,7 +6,7 @@ import AppShell from './components/AppShell/AppShell'
 import Search from './components/Search/Search'
 import ProspectsPage from './components/ProspectsPage/ProspectsPage'
 import VisitsPage from './components/VisitsPage/VisitsPage'
-import VisitedPage from './components/VisitedPage/VisitedPage'
+import ContactedPage from './components/ContactedPage/ContactedPage'
 
 function App() {
   return (
@@ -25,7 +25,8 @@ function App() {
             <Route path="/prospectos" element={<ProspectsPage />} />
             <Route path="/visitas" element={<VisitsPage />} />
             <Route path="/por-visitar" element={<Navigate to="/visitas" replace />} />
-            <Route path="/visitados" element={<VisitedPage />} />
+            <Route path="/contactados" element={<ContactedPage />} />
+            <Route path="/visitados" element={<Navigate to="/contactados" replace />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

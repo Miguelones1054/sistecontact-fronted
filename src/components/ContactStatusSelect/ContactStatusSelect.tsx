@@ -81,7 +81,9 @@ export function contactStatusLabel(value?: string | null): string {
 
 export function contactOutcomeLabel(value?: string | null): string {
   const opt = CONTACT_OUTCOME_OPTIONS.find((o) => o.value === value)
-  return opt?.label ?? ''
+  if (opt) return opt.label
+  if (!value) return ''
+  return value
 }
 
 interface Props {

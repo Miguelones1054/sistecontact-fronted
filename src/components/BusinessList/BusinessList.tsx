@@ -14,6 +14,7 @@ import type {
   GlobalVisitor,
 } from '../../types/api'
 import { formatVisitDate } from '../../utils/dates'
+import { contactOutcomeLabel } from '../ContactStatusSelect/ContactStatusSelect'
 import './BusinessList.css'
 
 interface Props {
@@ -380,7 +381,7 @@ function BusinessList({ businesses }: Props) {
                                 {v.visit_result && (
                                   <span>
                                     {APP_STRINGS.business.whoVisitedResult}:{' '}
-                                    {v.visit_result}
+                                    {contactOutcomeLabel(v.visit_result)}
                                   </span>
                                 )}
                                 <span>{formatVisitorDate(v.updated_at)}</span>

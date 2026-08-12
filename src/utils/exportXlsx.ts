@@ -1,5 +1,6 @@
 import * as XLSX from 'xlsx'
-import type { Prospect, Visit } from '../types/api'
+import type { ContactedItem } from '../components/ContactedPage/ContactedPage'
+import type { Prospect } from '../types/api'
 import {
   contactOutcomeLabel,
   contactStatusLabel,
@@ -66,7 +67,7 @@ export function exportProspectsXlsx(items: Prospect[]) {
   )
 }
 
-export function exportVisitedXlsx(items: Visit[]) {
+export function exportContactedXlsx(items: ContactedItem[]) {
   const rows = items.map((item) => ({
     'Place ID': item.place_id,
     Nombre: item.name,
@@ -78,16 +79,21 @@ export function exportVisitedXlsx(items: Visit[]) {
     Latitud: item.latitude ?? '',
     Longitud: item.longitude ?? '',
     'Google Maps': item.google_maps_uri ?? '',
-    'Resultado de la visita': item.visit_result ?? '',
-    'Notas de la visita': item.notes ?? '',
-    'Visitado el': formatDate(item.created_at),
+    Llamada: item.channels.includes('call') ? 'Sí' : 'No',
+    Visita: item.channels.includes('visit') ? 'Sí' : 'No',
+    'Clasificación de contacto': contactOutcomeLabel(
+      item.prospect?.contact_outcome || item.prospect?.contact_status,
+    ),
+    'Anotaciones de contacto': item.prospect?.contact_notes ?? '',
+    'Resultado de la visita': contactOutcomeLabel(item.visit?.visit_result),
+    'Notas de la visita': item.visit?.notes ?? '',
     'Actualizado el': formatDate(item.updated_at),
   }))
 
   const stamp = new Date().toISOString().slice(0, 10)
   downloadWorkbook(
     rows.length ? rows : [{ Nombre: '(sin registros)' }],
-    'Visitados',
-    `sistecontact-visitados-${stamp}.xlsx`,
+    'Contactados',
+    `sistecontact-contactados-${stamp}.xlsx`,
   )
 }
