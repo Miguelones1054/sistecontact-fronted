@@ -203,6 +203,79 @@
   text-decoration: underline;
 }
 
+.prospects__outcome-summary {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2b6cb0;
+}
+
+.prospects__contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-top: 0.55rem;
+  padding: 0.75rem;
+  background: #ebf8ff;
+  border: 1px solid #bee3f8;
+  border-radius: 8px;
+}
+
+.prospects__outcome {
+  margin: 0;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.prospects__outcome legend {
+  padding: 0;
+  margin-bottom: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: #2d3748;
+}
+
+.prospects__outcome-opt {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+  cursor: pointer;
+}
+
+.prospects__outcome-opt input {
+  accent-color: #2b6cb0;
+}
+
+.prospects__notes-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #4a5568;
+}
+
+.prospects__notes-field textarea {
+  font: inherit;
+  font-weight: 400;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #90cdf4;
+  border-radius: 8px;
+  resize: vertical;
+}
+
+.prospects__notes-field textarea:focus {
+  outline: none;
+  border-color: #2b6cb0;
+  box-shadow: 0 0 0 3px rgba(43, 108, 176, 0.15);
+}
+
 .prospects__card-actions {
   display: flex;
   flex-wrap: wrap;

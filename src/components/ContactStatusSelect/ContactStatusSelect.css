@@ -80,3 +80,13 @@
 .contact-status--affiliated .contact-status__dot {
   background: #38a169;
 }
+
+.contact-status--closed-sale {
+  background: #faf5ff;
+  color: #6b46c1;
+  border-color: #d6bcfa;
+}
+
+.contact-status--closed-sale .contact-status__dot {
+  background: #805ad5;
+}

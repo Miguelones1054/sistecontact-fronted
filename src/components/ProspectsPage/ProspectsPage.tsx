@@ -4,22 +4,41 @@ import {
   deleteProspect,
   fetchProspectsList,
   upsertContactStatus,
+  upsertProspect,
 } from '../../services/api'
 import type { Prospect } from '../../types/api'
+import { formatVisitDate, todayISODate } from '../../utils/dates'
 import { exportProspectsXlsx } from '../../utils/exportXlsx'
 import ContactStatusSelect, {
+  CONTACT_OUTCOME_OPTIONS,
   CONTACT_STATUS_OPTIONS,
   CONTACT_STATUS_ORDER,
+  type ContactOutcome,
   type ContactStatus,
+  contactOutcomeLabel,
+  normalizeContactOutcome,
   normalizeContactStatus,
 } from '../ContactStatusSelect/ContactStatusSelect'
 import './ProspectsPage.css'
+
+type StatusFilter = ContactStatus | ContactOutcome | 'all'
 
 function sortProspects(a: Prospect, b: Prospect): number {
   const oa = CONTACT_STATUS_ORDER[normalizeContactStatus(a.contact_status)]
   const ob = CONTACT_STATUS_ORDER[normalizeContactStatus(b.contact_status)]
   if (oa !== ob) return oa - ob
+  const outA = normalizeContactOutcome(a.contact_outcome, a.contact_status)
+  const outB = normalizeContactOutcome(b.contact_outcome, b.contact_status)
+  if (outA !== outB) return outA.localeCompare(outB)
   return a.name.localeCompare(b.name, 'es')
+}
+
+function matchesFilter(item: Prospect, filter: StatusFilter): boolean {
+  const status = normalizeContactStatus(item.contact_status)
+  const outcome = normalizeContactOutcome(item.contact_outcome, item.contact_status)
+  if (filter === 'all') return true
+  if (filter === 'not_contacted' || filter === 'contacted') return status === filter
+  return outcome === filter
 }
 
 function ProspectsPage() {
@@ -28,13 +47,36 @@ function ProspectsPage() {
   const [error, setError] = useState('')
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [statusBusyId, setStatusBusyId] = useState<string | null>(null)
-  const [filterStatus, setFilterStatus] = useState<ContactStatus | 'all'>('all')
+  const [dateBusyId, setDateBusyId] = useState<string | null>(null)
+  const [draftDates, setDraftDates] = useState<Record<string, string>>({})
+  const [draftOutcomes, setDraftOutcomes] = useState<Record<string, ContactOutcome | ''>>({})
+  const [draftNotes, setDraftNotes] = useState<Record<string, string>>({})
+  const [pendingContactIds, setPendingContactIds] = useState<Set<string>>(
+    () => new Set(),
+  )
+  const [filterStatus, setFilterStatus] = useState<StatusFilter>('all')
 
   function load() {
     setLoading(true)
     setError('')
     fetchProspectsList()
-      .then(setItems)
+      .then((list) => {
+        setItems(list)
+        const dates: Record<string, string> = {}
+        const outcomes: Record<string, ContactOutcome | ''> = {}
+        const notes: Record<string, string> = {}
+        for (const item of list) {
+          dates[item.place_id] = item.visit_date ?? todayISODate()
+          outcomes[item.place_id] = normalizeContactOutcome(
+            item.contact_outcome,
+            item.contact_status,
+          )
+          notes[item.place_id] = item.contact_notes ?? ''
+        }
+        setDraftDates(dates)
+        setDraftOutcomes(outcomes)
+        setDraftNotes(notes)
+      })
       .catch((err) => {
         setError(err instanceof Error ? err.message : APP_STRINGS.prospects.error)
       })
@@ -46,13 +88,7 @@ function ProspectsPage() {
   }, [])
 
   const sortedItems = useMemo(() => {
-    const filtered =
-      filterStatus === 'all'
-        ? items
-        : items.filter(
-            (i) => normalizeContactStatus(i.contact_status) === filterStatus,
-          )
-    return [...filtered].sort(sortProspects)
+    return items.filter((i) => matchesFilter(i, filterStatus)).sort(sortProspects)
   }, [items, filterStatus])
 
   async function handleRemove(placeId: string) {
@@ -60,6 +96,21 @@ function ProspectsPage() {
     try {
       await deleteProspect(placeId)
       setItems((prev) => prev.filter((i) => i.place_id !== placeId))
+      setDraftDates((prev) => {
+        const next = { ...prev }
+        delete next[placeId]
+        return next
+      })
+      setDraftOutcomes((prev) => {
+        const next = { ...prev }
+        delete next[placeId]
+        return next
+      })
+      setDraftNotes((prev) => {
+        const next = { ...prev }
+        delete next[placeId]
+        return next
+      })
     } catch (err) {
       setError(err instanceof Error ? err.message : APP_STRINGS.prospects.error)
     } finally {
@@ -68,17 +119,86 @@ function ProspectsPage() {
   }
 
   async function handleContactStatus(item: Prospect, status: ContactStatus) {
+    setError('')
+    if (status === 'contacted') {
+      setPendingContactIds((prev) => new Set(prev).add(item.place_id))
+      setDraftOutcomes((prev) => ({
+        ...prev,
+        [item.place_id]:
+          prev[item.place_id] ||
+          normalizeContactOutcome(item.contact_outcome, item.contact_status),
+      }))
+      setDraftNotes((prev) => ({
+        ...prev,
+        [item.place_id]: prev[item.place_id] ?? item.contact_notes ?? '',
+      }))
+      return
+    }
+
+    setPendingContactIds((prev) => {
+      const next = new Set(prev)
+      next.delete(item.place_id)
+      return next
+    })
+    setStatusBusyId(item.place_id)
+    try {
+      await upsertContactStatus(item.place_id, {
+        name: item.name,
+        address: item.address,
+        contact_status: 'not_contacted',
+        contact_outcome: '',
+        contact_notes: '',
+      })
+      setItems((prev) =>
+        prev.map((i) =>
+          i.place_id === item.place_id
+            ? { ...i, contact_status: 'not_contacted', contact_outcome: '', contact_notes: '' }
+            : i,
+        ),
+      )
+      setDraftOutcomes((prev) => ({ ...prev, [item.place_id]: '' }))
+      setDraftNotes((prev) => ({ ...prev, [item.place_id]: '' }))
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : APP_STRINGS.business.statusError,
+      )
+    } finally {
+      setStatusBusyId(null)
+    }
+  }
+
+  async function handleSaveContact(item: Prospect) {
+    const outcome = draftOutcomes[item.place_id] ?? ''
+    if (!outcome) {
+      setError(APP_STRINGS.prospects.outcomeRequired)
+      return
+    }
+    const notes = (draftNotes[item.place_id] ?? '').trim()
     setStatusBusyId(item.place_id)
     setError('')
     try {
       await upsertContactStatus(item.place_id, {
         name: item.name,
         address: item.address,
-        contact_status: status,
+        contact_status: 'contacted',
+        contact_outcome: outcome,
+        contact_notes: notes,
+      })
+      setPendingContactIds((prev) => {
+        const next = new Set(prev)
+        next.delete(item.place_id)
+        return next
       })
       setItems((prev) =>
         prev.map((i) =>
-          i.place_id === item.place_id ? { ...i, contact_status: status } : i,
+          i.place_id === item.place_id
+            ? {
+                ...i,
+                contact_status: 'contacted',
+                contact_outcome: outcome,
+                contact_notes: notes,
+              }
+            : i,
         ),
       )
     } catch (err) {
@@ -87,6 +207,84 @@ function ProspectsPage() {
       )
     } finally {
       setStatusBusyId(null)
+    }
+  }
+
+  async function handleSaveVisitDate(item: Prospect) {
+    const nextDate = (draftDates[item.place_id] ?? '').trim()
+    if (!nextDate) {
+      setError(APP_STRINGS.business.visitDateRequired)
+      return
+    }
+    if (nextDate === (item.visit_date ?? '')) return
+
+    setDateBusyId(item.place_id)
+    setError('')
+    try {
+      const updated = await upsertProspect(item.place_id, {
+        name: item.name,
+        address: item.address,
+        phone: item.phone,
+        rating: item.rating,
+        user_rating_count: item.user_rating_count,
+        google_maps_uri: item.google_maps_uri,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        open_now: item.open_now,
+        contact_status: item.contact_status,
+        contact_outcome: item.contact_outcome,
+        contact_notes: item.contact_notes,
+        visit_date: nextDate,
+      })
+      setItems((prev) =>
+        prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
+      )
+      setDraftDates((prev) => ({
+        ...prev,
+        [item.place_id]: updated.visit_date ?? nextDate,
+      }))
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : APP_STRINGS.business.prospectError,
+      )
+    } finally {
+      setDateBusyId(null)
+    }
+  }
+
+  async function handleClearVisitDate(item: Prospect) {
+    if (!item.visit_date) return
+    setDateBusyId(item.place_id)
+    setError('')
+    try {
+      const updated = await upsertProspect(item.place_id, {
+        name: item.name,
+        address: item.address,
+        phone: item.phone,
+        rating: item.rating,
+        user_rating_count: item.user_rating_count,
+        google_maps_uri: item.google_maps_uri,
+        latitude: item.latitude,
+        longitude: item.longitude,
+        open_now: item.open_now,
+        contact_status: item.contact_status,
+        contact_outcome: item.contact_outcome,
+        contact_notes: item.contact_notes,
+        clear_visit_date: true,
+      })
+      setItems((prev) =>
+        prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
+      )
+      setDraftDates((prev) => ({
+        ...prev,
+        [item.place_id]: todayISODate(),
+      }))
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : APP_STRINGS.business.prospectError,
+      )
+    } finally {
+      setDateBusyId(null)
     }
   }
 
@@ -125,6 +323,16 @@ function ProspectsPage() {
             {opt.label}
           </button>
         ))}
+        {CONTACT_OUTCOME_OPTIONS.map((opt) => (
+          <button
+            key={opt.value}
+            type="button"
+            className={`prospects__filter${filterStatus === opt.value ? ' prospects__filter--active' : ''}`}
+            onClick={() => setFilterStatus(opt.value)}
+          >
+            {opt.label}
+          </button>
+        ))}
       </div>
 
       {loading && <p className="prospects__hint">{APP_STRINGS.prospects.loading}</p>}
@@ -140,51 +348,176 @@ function ProspectsPage() {
 
       {!loading && sortedItems.length > 0 && (
         <ul className="prospects__list">
-          {sortedItems.map((item) => (
-            <li key={item.place_id} className="prospects__card">
-              <div className="prospects__card-main">
-                <div className="prospects__card-top">
-                  <h3 className="prospects__name">{item.name}</h3>
-                  <ContactStatusSelect
-                    value={item.contact_status}
-                    disabled={statusBusyId === item.place_id}
-                    onChange={(status) => handleContactStatus(item, status)}
-                  />
+          {sortedItems.map((item) => {
+            const draft = draftDates[item.place_id] ?? item.visit_date ?? todayISODate()
+            const dirty = draft !== (item.visit_date ?? '')
+            const dateBusy = dateBusyId === item.place_id
+            const isContacted =
+              normalizeContactStatus(item.contact_status) === 'contacted' ||
+              pendingContactIds.has(item.place_id)
+            const draftOutcome =
+              draftOutcomes[item.place_id] ??
+              normalizeContactOutcome(item.contact_outcome, item.contact_status)
+            const draftNote = draftNotes[item.place_id] ?? item.contact_notes ?? ''
+            const savedOutcome = normalizeContactOutcome(
+              item.contact_outcome,
+              item.contact_status,
+            )
+            const contactDirty =
+              draftOutcome !== savedOutcome ||
+              draftNote !== (item.contact_notes ?? '')
+            const statusBusy = statusBusyId === item.place_id
+
+            return (
+              <li key={item.place_id} className="prospects__card">
+                <div className="prospects__card-main">
+                  <div className="prospects__card-top">
+                    <h3 className="prospects__name">{item.name}</h3>
+                    <ContactStatusSelect
+                      value={isContacted ? 'contacted' : item.contact_status}
+                      disabled={statusBusy}
+                      onChange={(status) => handleContactStatus(item, status)}
+                    />
+                  </div>
+                  {isContacted && savedOutcome && !contactDirty && (
+                    <p className="prospects__outcome-summary">
+                      {contactOutcomeLabel(savedOutcome)}
+                    </p>
+                  )}
+                  <p className="prospects__address">{item.address}</p>
+                  {item.phone && (
+                    <a className="prospects__phone" href={`tel:${item.phone}`}>
+                      {item.phone}
+                    </a>
+                  )}
+                  {item.rating != null && item.rating > 0 && (
+                    <span className="prospects__rating">
+                      ★ {item.rating.toFixed(1)}
+                    </span>
+                  )}
+                  {item.google_maps_uri && (
+                    <a
+                      className="prospects__link"
+                      href={item.google_maps_uri}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {APP_STRINGS.business.viewOnMaps}
+                    </a>
+                  )}
+
+                  {isContacted && (
+                    <div className="prospects__contact-form">
+                      <fieldset className="prospects__outcome" disabled={statusBusy}>
+                        <legend>{APP_STRINGS.prospects.outcomeLabel}</legend>
+                        {CONTACT_OUTCOME_OPTIONS.map((opt) => (
+                          <label key={opt.value} className={`prospects__outcome-opt ${opt.className}`}>
+                            <input
+                              type="radio"
+                              name={`outcome-${item.place_id}`}
+                              value={opt.value}
+                              checked={draftOutcome === opt.value}
+                              onChange={() =>
+                                setDraftOutcomes((prev) => ({
+                                  ...prev,
+                                  [item.place_id]: opt.value,
+                                }))
+                              }
+                            />
+                            {opt.label}
+                          </label>
+                        ))}
+                      </fieldset>
+                      <label className="prospects__notes-field">
+                        <span>{APP_STRINGS.prospects.notesLabel}</span>
+                        <textarea
+                          rows={3}
+                          value={draftNote}
+                          placeholder={APP_STRINGS.prospects.notesPlaceholder}
+                          disabled={statusBusy}
+                          onChange={(e) =>
+                            setDraftNotes((prev) => ({
+                              ...prev,
+                              [item.place_id]: e.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                      {(contactDirty || !savedOutcome) && (
+                        <button
+                          type="button"
+                          className="prospects__date-save"
+                          onClick={() => handleSaveContact(item)}
+                          disabled={statusBusy || !draftOutcome}
+                        >
+                          {statusBusy
+                            ? APP_STRINGS.business.savingVisit
+                            : APP_STRINGS.prospects.saveContact}
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="prospects__date-row">
+                    <label className="prospects__date-field">
+                      <span>{APP_STRINGS.prospects.visitDateLabel}</span>
+                      <input
+                        type="date"
+                        value={draft}
+                        min={todayISODate()}
+                        onChange={(e) =>
+                          setDraftDates((prev) => ({
+                            ...prev,
+                            [item.place_id]: e.target.value,
+                          }))
+                        }
+                        disabled={dateBusy}
+                      />
+                    </label>
+                    <div className="prospects__date-meta">
+                      <span className="prospects__date-hint">
+                        {item.visit_date
+                          ? formatVisitDate(item.visit_date)
+                          : APP_STRINGS.prospects.noVisitDate}
+                      </span>
+                      {(dirty || !item.visit_date) && (
+                        <button
+                          type="button"
+                          className="prospects__date-save"
+                          onClick={() => handleSaveVisitDate(item)}
+                          disabled={dateBusy || !draft}
+                        >
+                          {dateBusy
+                            ? APP_STRINGS.business.savingVisit
+                            : APP_STRINGS.prospects.saveDate}
+                        </button>
+                      )}
+                      {!!item.visit_date && (
+                        <button
+                          type="button"
+                          className="prospects__date-save"
+                          onClick={() => handleClearVisitDate(item)}
+                          disabled={dateBusy}
+                        >
+                          {APP_STRINGS.prospects.clearDate}
+                        </button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <p className="prospects__address">{item.address}</p>
-                {item.phone && (
-                  <a className="prospects__phone" href={`tel:${item.phone}`}>
-                    {item.phone}
-                  </a>
-                )}
-                {item.rating != null && item.rating > 0 && (
-                  <span className="prospects__rating">
-                    ★ {item.rating.toFixed(1)}
-                  </span>
-                )}
-                {item.google_maps_uri && (
-                  <a
-                    className="prospects__link"
-                    href={item.google_maps_uri}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                <div className="prospects__card-actions">
+                  <button
+                    type="button"
+                    className="prospects__remove"
+                    onClick={() => handleRemove(item.place_id)}
+                    disabled={removingId === item.place_id}
                   >
-                    {APP_STRINGS.business.viewOnMaps}
-                  </a>
-                )}
-              </div>
-              <div className="prospects__card-actions">
-                <button
-                  type="button"
-                  className="prospects__remove"
-                  onClick={() => handleRemove(item.place_id)}
-                  disabled={removingId === item.place_id}
-                >
-                  {APP_STRINGS.prospects.remove}
-                </button>
-              </div>
-            </li>
-          ))}
+                    {APP_STRINGS.prospects.remove}
+                  </button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

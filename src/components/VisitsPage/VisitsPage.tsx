@@ -11,7 +11,9 @@ import {
 } from '../../utils/dates'
 import { exportProspectsXlsx } from '../../utils/exportXlsx'
 import {
+  contactOutcomeLabel,
   contactStatusLabel,
+  normalizeContactOutcome,
   normalizeContactStatus,
 } from '../ContactStatusSelect/ContactStatusSelect'
 import VisitPanel from '../VisitPanel/VisitPanel'
@@ -126,6 +128,8 @@ function VisitsPage() {
         longitude: item.longitude,
         open_now: item.open_now,
         contact_status: item.contact_status,
+        contact_outcome: item.contact_outcome,
+        contact_notes: item.contact_notes,
         visit_date: nextDate,
       })
       setItems((prev) =>
@@ -160,6 +164,8 @@ function VisitsPage() {
         longitude: item.longitude,
         open_now: item.open_now,
         contact_status: item.contact_status,
+        contact_outcome: item.contact_outcome,
+        contact_notes: item.contact_notes,
         clear_visit_date: true,
       })
       setItems((prev) =>
@@ -180,6 +186,9 @@ function VisitsPage() {
     const dirty = draft !== (item.visit_date ?? '')
     const dateBusy = dateBusyId === item.place_id
     const statusLabel = contactStatusLabel(item.contact_status)
+    const outcomeLabel = contactOutcomeLabel(
+      normalizeContactOutcome(item.contact_outcome, item.contact_status),
+    )
 
     return (
       <li key={item.place_id} className="visits__card">
@@ -189,7 +198,7 @@ function VisitsPage() {
             <span
               className={`visits__status-badge visits__status-badge--${normalizeContactStatus(item.contact_status)}`}
             >
-              {statusLabel}
+              {outcomeLabel || statusLabel}
             </span>
           </div>
           <p className="visits__address">{item.address}</p>

@@ -68,7 +68,7 @@ export const APP_STRINGS = {
   prospects: {
     title: 'Prospectos',
     subtitle:
-      'Define el estado de contacto de cada comercio (contactado, no le interesa, servicio activo).',
+      'Estado de contacto, agenda de visita y seguimiento de cada comercio.',
     empty:
       'Aún no tienes prospectos. Agrégalos desde los resultados de búsqueda.',
     loading: 'Cargando prospectos...',
@@ -76,6 +76,15 @@ export const APP_STRINGS = {
     remove: 'Quitar de prospectos',
     filterAll: 'Todos',
     filterEmpty: 'No hay comercios con ese estado.',
+    outcomeRequired: 'Elige una clasificación del contacto.',
+    notesLabel: 'Anotaciones del contacto',
+    notesPlaceholder: 'Qué se habló, con quién, próximos pasos...',
+    outcomeLabel: 'Clasificación',
+    saveContact: 'Guardar contacto',
+    visitDateLabel: 'Agendar visita',
+    noVisitDate: 'Sin fecha asignada',
+    saveDate: 'Guardar agenda',
+    clearDate: 'Quitar agenda',
   },
   visits: {
     title: 'Visitas',

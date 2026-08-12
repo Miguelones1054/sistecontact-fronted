@@ -1,6 +1,9 @@
 import * as XLSX from 'xlsx'
 import type { Prospect, Visit } from '../types/api'
-import { contactStatusLabel } from '../components/ContactStatusSelect/ContactStatusSelect'
+import {
+  contactOutcomeLabel,
+  contactStatusLabel,
+} from '../components/ContactStatusSelect/ContactStatusSelect'
 
 function formatDate(value?: string): string {
   if (!value) return ''
@@ -46,6 +49,10 @@ export function exportProspectsXlsx(items: Prospect[]) {
     Longitud: item.longitude ?? '',
     'Google Maps': item.google_maps_uri ?? '',
     'Estado de contacto': contactStatusLabel(item.contact_status),
+    Clasificación: contactOutcomeLabel(
+      item.contact_outcome || item.contact_status,
+    ),
+    'Anotaciones de contacto': item.contact_notes ?? '',
     'Fecha de visita': item.visit_date ?? '',
     'Agregado el': formatDate(item.created_at),
     'Actualizado el': formatDate(item.updated_at),

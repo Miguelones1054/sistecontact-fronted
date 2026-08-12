@@ -108,6 +108,8 @@ export interface Prospect {
   longitude?: number
   open_now?: boolean | null
   contact_status?: string
+  contact_outcome?: string
+  contact_notes?: string
   visit_date?: string
   created_at: string
   updated_at: string
@@ -124,6 +126,8 @@ export interface UpsertProspectPayload {
   longitude?: number
   open_now?: boolean | null
   contact_status?: string
+  contact_outcome?: string
+  contact_notes?: string
   visit_date?: string
   clear_visit_date?: boolean
 }
@@ -133,6 +137,8 @@ export interface ContactStatusRecord {
   name: string
   address: string
   contact_status: string
+  contact_outcome?: string
+  contact_notes?: string
   updated_at: string
 }
 
@@ -140,4 +146,6 @@ export interface UpsertContactStatusPayload {
   name: string
   address: string
   contact_status: string
+  contact_outcome?: string
+  contact_notes?: string
 }
