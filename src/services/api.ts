@@ -13,7 +13,21 @@ import type {
   Zone,
 } from '../types/api'
 
-const API_BASE = '/api'
+const PROD_API_ORIGIN = 'https://apisistecontact.nodefex.com'
+
+function resolveApiBase(): string {
+  const fromEnv = import.meta.env.VITE_API_BASE_URL?.trim().replace(/\/$/, '')
+  if (fromEnv) {
+    return `${fromEnv}/api`
+  }
+  // En Vercel / vite build (PROD) usa la API pública. En local, el proxy de Vite.
+  if (import.meta.env.PROD) {
+    return `${PROD_API_ORIGIN}/api`
+  }
+  return '/api'
+}
+
+const API_BASE = resolveApiBase()
 
 async function authHeaders(): Promise<HeadersInit> {
   const user = auth.currentUser
