@@ -357,7 +357,7 @@ function ProfilePanel({
 
           {!calendarLoading && calendarConfigured && calendarConnected && (
             <p className="profile-panel__calendar-account">
-              {calendar.email}
+              {calendar?.email}
             </p>
           )}
 
