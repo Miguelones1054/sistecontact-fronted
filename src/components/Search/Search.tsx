@@ -1,71 +1,37 @@
-import { useRef, useState } from 'react'
 import ZoneSelect from '../ZoneSelect/ZoneSelect'
 import ZoneMap from '../ZoneMap/ZoneMap'
 import BusinessList from '../BusinessList/BusinessList'
-import { searchBusinesses } from '../../services/api'
 import { APP_STRINGS } from '../../constants/strings'
-import type { Business, Zone } from '../../types/api'
+import { useSearch } from '../../context/SearchContext'
 import { exportSearchXlsx } from '../../utils/exportXlsx'
 import './Search.css'
 
-const DEFAULT_RADIUS_KM = 2
 const MIN_RADIUS_KM = 0.5
 const MAX_RADIUS_KM = 15
 const RADIUS_STEP_KM = 0.5
 
 function Search() {
-  const [type, setType] = useState('')
-  const [zone, setZone] = useState<Zone | null>(null)
-  const [radiusKm, setRadiusKm] = useState(DEFAULT_RADIUS_KM)
-  const [mapEnabled, setMapEnabled] = useState(false)
-  const [results, setResults] = useState<Business[]>([])
-  const [resultZone, setResultZone] = useState<Zone | null>(null)
-  const [resultRadiusKm, setResultRadiusKm] = useState<number | undefined>()
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [hasSearched, setHasSearched] = useState(false)
-  const abortRef = useRef<AbortController | null>(null)
-
-  function handleZoneChange(next: Zone | null) {
-    setZone(next)
-    setResults([])
-    setResultZone(null)
-    setResultRadiusKm(undefined)
-    setHasSearched(false)
-    setError('')
-  }
+  const {
+    type,
+    setType,
+    zone,
+    radiusKm,
+    setRadiusKm,
+    mapEnabled,
+    setMapEnabled,
+    results,
+    resultZone,
+    resultRadiusKm,
+    loading,
+    error,
+    hasSearched,
+    handleZoneChange,
+    runSearch,
+  } = useSearch()
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!type.trim()) {
-      setError(APP_STRINGS.search.typeRequired)
-      return
-    }
-    if (!zone) {
-      setError(APP_STRINGS.search.zoneRequired)
-      return
-    }
-
-    abortRef.current?.abort()
-    const ac = new AbortController()
-    abortRef.current = ac
-
-    setLoading(true)
-    setError('')
-    setHasSearched(true)
-
-    const zoneRef = zone.place_id ?? zone.formatted_address
-    const radius = mapEnabled ? radiusKm : undefined
-    searchBusinesses(type.trim(), zoneRef, ac.signal, radius)
-      .then((resp) => {
-        setResults(resp.businesses)
-        setResultZone(resp.zone)
-        setResultRadiusKm(mapEnabled ? resp.radius_km : undefined)
-      })
-      .catch((err) => {
-        if (err.name !== 'AbortError') setError(err.message)
-      })
-      .finally(() => setLoading(false))
+    runSearch()
   }
 
   return (

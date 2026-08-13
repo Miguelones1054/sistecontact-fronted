@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { APP_STRINGS } from '../../constants/strings'
 import { SchedulingSettingsProvider } from '../../context/SchedulingSettingsContext'
+import { SearchProvider } from '../../context/SearchContext'
 import ProfilePanel from '../ProfilePanel/ProfilePanel'
 import ScheduleIntervalBar from '../ScheduleIntervalBar/ScheduleIntervalBar'
 import './AppShell.css'
@@ -43,6 +44,7 @@ function AppShell() {
 
   return (
     <SchedulingSettingsProvider>
+      <SearchProvider>
       <div className="app-shell">
         <div className="app-shell__topbar">
           <span className="app-shell__user">{user?.email}</span>
@@ -120,6 +122,7 @@ function AppShell() {
           onCalendarFlashConsumed={clearCalendarFlash}
         />
       </div>
+      </SearchProvider>
     </SchedulingSettingsProvider>
   )
 }
