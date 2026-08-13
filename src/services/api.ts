@@ -13,6 +13,7 @@ import type {
   Visit,
   Zone,
   SchedulingSettings,
+  AccessSettings,
   GoogleCalendarStatus,
   GoogleCalendarConnectResponse,
 } from '../types/api'
@@ -213,6 +214,16 @@ export async function upsertContactStatus(
       body: JSON.stringify(payload),
     },
   )
+}
+
+export async function fetchAccessSettings(
+  signal?: AbortSignal,
+): Promise<AccessSettings> {
+  const headers = await authHeaders()
+  return request<AccessSettings>('/settings/access', {
+    signal,
+    headers,
+  })
 }
 
 export async function fetchSchedulingSettings(

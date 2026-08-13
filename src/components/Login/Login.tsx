@@ -4,13 +4,47 @@ import { useAuth } from '../../context/AuthContext'
 import { APP_STRINGS } from '../../constants/strings'
 import './Login.css'
 
+const REMEMBER_KEY = 'sistecontact.rememberCredentials'
+
+type RememberedCredentials = {
+  email: string
+  password: string
+}
+
+function loadRemembered(): RememberedCredentials | null {
+  try {
+    const raw = localStorage.getItem(REMEMBER_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<RememberedCredentials>
+    if (typeof parsed.email !== 'string' || typeof parsed.password !== 'string') {
+      return null
+    }
+    return { email: parsed.email, password: parsed.password }
+  } catch {
+    return null
+  }
+}
+
+function saveRemembered(email: string, password: string) {
+  localStorage.setItem(
+    REMEMBER_KEY,
+    JSON.stringify({ email: email.trim(), password }),
+  )
+}
+
+function clearRemembered() {
+  localStorage.removeItem(REMEMBER_KEY)
+}
+
 function Login() {
   const { user, loading, login } = useAuth()
   const location = useLocation()
   const from = (location.state as { from?: string } | null)?.from ?? '/'
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const remembered = loadRemembered()
+  const [email, setEmail] = useState(remembered?.email ?? '')
+  const [password, setPassword] = useState(remembered?.password ?? '')
+  const [remember, setRemember] = useState(Boolean(remembered))
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
@@ -34,6 +68,11 @@ function Login() {
     setSubmitting(true)
     try {
       await login(email, password)
+      if (remember) {
+        saveRemembered(email, password)
+      } else {
+        clearRemembered()
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : APP_STRINGS.login.errors.generic)
     } finally {
@@ -82,6 +121,20 @@ function Login() {
               disabled={submitting || loading}
             />
           </div>
+
+          <label className="login__remember">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => {
+                const next = e.target.checked
+                setRemember(next)
+                if (!next) clearRemembered()
+              }}
+              disabled={submitting || loading}
+            />
+            <span>{APP_STRINGS.login.rememberCredentials}</span>
+          </label>
 
           {error && <p className="login__error">{error}</p>}
 

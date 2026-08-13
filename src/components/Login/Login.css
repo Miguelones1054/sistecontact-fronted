@@ -83,6 +83,29 @@
   color: #a0aec0;
 }
 
+.login__remember {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #2d3748;
+  cursor: pointer;
+  user-select: none;
+}
+
+.login__remember input {
+  width: 1.05rem;
+  height: 1.05rem;
+  accent-color: #2b6cb0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.login__remember input:disabled {
+  cursor: not-allowed;
+}
+
 .login__error {
   margin: 0;
   padding: 0.65rem 0.8rem;

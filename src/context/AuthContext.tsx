@@ -14,6 +14,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth } from '../lib/firebase'
+import { fetchAccessSettings } from '../services/api'
 import { APP_STRINGS } from '../constants/strings'
 
 interface AuthContextValue {
@@ -45,14 +46,36 @@ function mapAuthError(code: string): string {
   }
 }
 
+async function assertSistecontactAccess(): Promise<void> {
+  const access = await fetchAccessSettings()
+  if (!access.sistecontact_enabled) {
+    await signOut(auth)
+    throw new Error(APP_STRINGS.login.errors.noAccess)
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (next) => {
-      setUser(next)
-      setLoading(false)
+      void (async () => {
+        if (!next) {
+          setUser(null)
+          setLoading(false)
+          return
+        }
+        setLoading(true)
+        try {
+          await assertSistecontactAccess()
+          setUser(next)
+        } catch {
+          setUser(null)
+        } finally {
+          setLoading(false)
+        }
+      })()
     })
     return unsub
   }, [])
@@ -60,12 +83,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(async (email: string, password: string) => {
     try {
       await signInWithEmailAndPassword(auth, email.trim(), password)
+      await assertSistecontactAccess()
     } catch (err) {
+      if (auth.currentUser) {
+        await signOut(auth).catch(() => undefined)
+      }
+      if (err instanceof Error && err.message === APP_STRINGS.login.errors.noAccess) {
+        throw err
+      }
       const code =
         typeof err === 'object' && err !== null && 'code' in err
           ? String((err as { code: string }).code)
           : ''
-      throw new Error(mapAuthError(code))
+      throw new Error(code ? mapAuthError(code) : APP_STRINGS.login.errors.generic)
     }
   }, [])
 

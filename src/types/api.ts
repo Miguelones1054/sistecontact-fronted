@@ -161,6 +161,11 @@ export interface UpsertContactStatusPayload {
   contact_notes?: string
 }
 
+export interface AccessSettings {
+  sistecontact_enabled: boolean
+  updated_at?: string
+}
+
 export interface SchedulingSettings {
   appointment_interval_minutes: number
   updated_at?: string

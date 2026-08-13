@@ -69,6 +69,7 @@ export const APP_STRINGS = {
     checkingSession: 'Comprobando sesión...',
     emailRequired: 'Ingresa tu correo.',
     passwordRequired: 'Ingresa tu contraseña.',
+    rememberCredentials: 'Recordar credenciales',
     noRegisterHint:
       'No hay registro público. Si no tienes acceso, contacta al administrador.',
     logout: 'Cerrar sesión',
@@ -78,6 +79,8 @@ export const APP_STRINGS = {
       invalidCredential: 'Correo o contraseña incorrectos.',
       tooManyRequests: 'Demasiados intentos. Espera un momento e inténtalo de nuevo.',
       network: 'Error de red. Revisa tu conexión.',
+      noAccess:
+        'No tienes membresía activa. Actívala en www.nodefex.com/sistecontact',
       generic: 'No se pudo iniciar sesión. Inténtalo de nuevo.',
     },
   },
