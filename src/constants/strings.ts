@@ -1,7 +1,7 @@
 export const APP_STRINGS = {
   app: {
     name: 'SisteContact',
-    subtitle: 'Prospectador',
+    subtitle: 'PROSPECTADOR',
     tagline: 'Busca comercios por tipo y zona',
   },
   tabs: {
@@ -36,7 +36,7 @@ export const APP_STRINGS = {
     kpiClosedSales: 'Ventas cerradas',
     kpiVisits: 'Visitas',
     chartContactStatus: 'Estado de contacto en prospectos',
-    chartContactOutcomes: 'Clasificación de contactos (llamada)',
+    chartContactOutcomes: 'Resultado de llamadas',
     chartVisitOutcomes: 'Resultado de visitas',
     emptyProspects: 'Aún no tienes prospectos agregados.',
     emptyOutcomes: 'Aún no hay contactos clasificados.',
