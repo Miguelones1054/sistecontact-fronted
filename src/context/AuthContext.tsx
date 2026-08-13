@@ -46,9 +46,13 @@ function mapAuthError(code: string): string {
   }
 }
 
+function isSistecontactEnabled(value: unknown): boolean {
+  return value === true || value === 'true' || value === 1 || value === '1'
+}
+
 async function assertSistecontactAccess(): Promise<void> {
   const access = await fetchAccessSettings()
-  if (!access.sistecontact_enabled) {
+  if (!isSistecontactEnabled(access.sistecontact_enabled)) {
     await signOut(auth)
     throw new Error(APP_STRINGS.login.errors.noAccess)
   }
@@ -91,11 +95,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (err instanceof Error && err.message === APP_STRINGS.login.errors.noAccess) {
         throw err
       }
+      if (err instanceof Error && err.message.includes('membresía activa')) {
+        throw new Error(APP_STRINGS.login.errors.noAccess)
+      }
       const code =
         typeof err === 'object' && err !== null && 'code' in err
           ? String((err as { code: string }).code)
           : ''
-      throw new Error(code ? mapAuthError(code) : APP_STRINGS.login.errors.generic)
+      if (code) {
+        throw new Error(mapAuthError(code))
+      }
+      if (err instanceof Error && err.message) {
+        throw err
+      }
+      throw new Error(APP_STRINGS.login.errors.generic)
     }
   }, [])
 
