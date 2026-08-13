@@ -116,6 +116,8 @@ export interface Prospect {
   call_time?: string
   call_google_event_id?: string
   visit_google_event_id?: string
+  calendar_sync_status?: 'synced' | 'skipped' | 'error' | string
+  calendar_sync_error?: string
   created_at: string
   updated_at: string
 }

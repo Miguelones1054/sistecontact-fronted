@@ -16,6 +16,7 @@ import {
   defaultTimeForInterval,
   formatCallDateTime,
 } from '../../utils/callTimes'
+import { calendarSyncFeedback } from '../../utils/calendarSync'
 import { exportProspectsXlsx } from '../../utils/exportXlsx'
 import {
   contactOutcomeLabel,
@@ -249,6 +250,8 @@ function VisitsPage() {
         ...prev,
         [item.place_id]: updated.visit_time ?? nextTime,
       }))
+      const syncMsg = calendarSyncFeedback(updated)
+      if (syncMsg) setError(syncMsg)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : APP_STRINGS.business.prospectError,
@@ -354,6 +357,8 @@ function VisitsPage() {
         ...prev,
         [item.place_id]: updated.call_time ?? nextTime,
       }))
+      const syncMsg = calendarSyncFeedback(updated)
+      if (syncMsg) setError(syncMsg)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : APP_STRINGS.business.prospectError,

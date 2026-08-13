@@ -9,6 +9,7 @@ import {
 } from '../../services/api'
 import type { Prospect } from '../../types/api'
 import { todayISODate } from '../../utils/dates'
+import { calendarSyncFeedback } from '../../utils/calendarSync'
 import {
   buildTimeOptionsFromInterval,
   defaultTimeForInterval,
@@ -299,6 +300,8 @@ function ProspectsPage() {
         ...prev,
         [item.place_id]: updated.visit_time ?? nextTime,
       }))
+      const syncMsg = calendarSyncFeedback(updated)
+      if (syncMsg) setError(syncMsg)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : APP_STRINGS.business.prospectError,
@@ -407,6 +410,8 @@ function ProspectsPage() {
         ...prev,
         [item.place_id]: updated.call_time ?? nextTime,
       }))
+      const syncMsg = calendarSyncFeedback(updated)
+      if (syncMsg) setError(syncMsg)
     } catch (err) {
       setError(
         err instanceof Error ? err.message : APP_STRINGS.business.prospectError,

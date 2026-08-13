@@ -143,6 +143,11 @@ export const APP_STRINGS = {
     badgeVisit: 'Visita',
     expandCard: 'Ver detalle',
     collapseCard: 'Ocultar detalle',
+    calendarSynced: 'Cita guardada también en Google Calendar.',
+    calendarSyncSkipped:
+      'Agenda guardada, pero Google Calendar no está conectado. Conéctalo en Mi perfil.',
+    calendarSyncError: (detail: string) =>
+      `Agenda guardada, pero no se pudo sincronizar con Google Calendar: ${detail}`,
   },
   visits: {
     title: 'Por Contactar',
@@ -186,6 +191,11 @@ export const APP_STRINGS = {
     collapseCard: 'Ocultar detalle',
     scheduledLabel: 'Agendado',
     unscheduledLabel: 'Sin agenda',
+    calendarSynced: 'Cita guardada también en Google Calendar.',
+    calendarSyncSkipped:
+      'Agenda guardada, pero Google Calendar no está conectado. Conéctalo en Mi perfil.',
+    calendarSyncError: (detail: string) =>
+      `Agenda guardada, pero no se pudo sincronizar con Google Calendar: ${detail}`,
   },
   contacted: {
     title: 'Comercios contactados',
