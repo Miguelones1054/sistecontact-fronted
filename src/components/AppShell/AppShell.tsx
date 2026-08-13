@@ -46,31 +46,38 @@ function AppShell() {
     <SchedulingSettingsProvider>
       <SearchProvider>
       <div className="app-shell">
-        <div className="app-shell__topbar">
-          <span className="app-shell__user">{user?.email}</span>
-          <div className="app-shell__actions">
-            <button
-              type="button"
-              className="app-shell__logout"
-              onClick={handleLogout}
-              disabled={loggingOut}
-            >
-              {APP_STRINGS.login.logout}
-            </button>
-            <button
-              type="button"
-              className="app-shell__profile"
-              onClick={() => setProfileOpen(true)}
-            >
-              {APP_STRINGS.profile.button}
-            </button>
-          </div>
-        </div>
-
         <header className="app-shell__header">
-          <h1 className="app-shell__title">{APP_STRINGS.app.name}</h1>
-          <p className="app-shell__subtitle">{APP_STRINGS.app.subtitle}</p>
-          <p className="app-shell__tagline">{APP_STRINGS.app.tagline}</p>
+          <div className="app-shell__header-row">
+            <div className="app-shell__brand">
+              <h1 className="app-shell__title">{APP_STRINGS.app.name}</h1>
+              <p className="app-shell__subtitle">{APP_STRINGS.app.subtitle}</p>
+            </div>
+            <div className="app-shell__actions">
+              <button
+                type="button"
+                className="app-shell__logout"
+                onClick={handleLogout}
+                disabled={loggingOut}
+              >
+                {APP_STRINGS.login.logout}
+              </button>
+              <button
+                type="button"
+                className="app-shell__profile"
+                onClick={() => setProfileOpen(true)}
+              >
+                {APP_STRINGS.profile.button}
+              </button>
+            </div>
+          </div>
+          <div className="app-shell__header-meta">
+            <p className="app-shell__tagline">{APP_STRINGS.app.tagline}</p>
+            {user?.email && (
+              <span className="app-shell__user" title={user.email}>
+                {user.email}
+              </span>
+            )}
+          </div>
         </header>
 
         <nav className="app-shell__tabs" aria-label="Secciones">
