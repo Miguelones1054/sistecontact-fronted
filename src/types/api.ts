@@ -114,6 +114,8 @@ export interface Prospect {
   visit_time?: string
   call_date?: string
   call_time?: string
+  call_google_event_id?: string
+  visit_google_event_id?: string
   created_at: string
   updated_at: string
 }

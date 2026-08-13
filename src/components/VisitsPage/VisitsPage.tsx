@@ -279,7 +279,18 @@ function VisitsPage() {
         clear_visit_date: true,
       })
       setItems((prev) =>
-        prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
+        prev.map((i) =>
+          i.place_id === item.place_id
+            ? {
+                ...i,
+                ...updated,
+                visit_date: undefined,
+                visit_time: undefined,
+                call_date: updated.call_date || undefined,
+                call_time: updated.call_time || undefined,
+              }
+            : i,
+        ),
       )
       setDraftDates((prev) => ({ ...prev, [item.place_id]: '' }))
       setDraftVisitTimes((prev) => ({
@@ -373,7 +384,18 @@ function VisitsPage() {
         clear_call_date: true,
       })
       setItems((prev) =>
-        prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
+        prev.map((i) =>
+          i.place_id === item.place_id
+            ? {
+                ...i,
+                ...updated,
+                call_date: undefined,
+                call_time: undefined,
+                visit_date: updated.visit_date || undefined,
+                visit_time: updated.visit_time || undefined,
+              }
+            : i,
+        ),
       )
       setDraftCallDates((prev) => ({ ...prev, [item.place_id]: '' }))
       setDraftCallTimes((prev) => ({

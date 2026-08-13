@@ -138,8 +138,11 @@ export const APP_STRINGS = {
     callDateRequired: 'Elige una fecha de llamada.',
     callTimeRequired: 'Elige una hora de llamada.',
     scheduledLabel: 'Agendado',
+    unscheduledLabel: 'Sin agenda',
     badgeCall: 'Llamada',
     badgeVisit: 'Visita',
+    expandCard: 'Ver detalle',
+    collapseCard: 'Ocultar detalle',
   },
   visits: {
     title: 'Por Contactar',

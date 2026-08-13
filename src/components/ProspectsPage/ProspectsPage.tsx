@@ -77,6 +77,16 @@ function ProspectsPage() {
     () => new Set(),
   )
   const [filterStatus, setFilterStatus] = useState<StatusFilter>('all')
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(() => new Set())
+
+  function toggleExpanded(placeId: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(placeId)) next.delete(placeId)
+      else next.add(placeId)
+      return next
+    })
+  }
 
   function load() {
     setLoading(true)
@@ -319,7 +329,18 @@ function ProspectsPage() {
         clear_visit_date: true,
       })
       setItems((prev) =>
-        prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
+        prev.map((i) =>
+          i.place_id === item.place_id
+            ? {
+                ...i,
+                ...updated,
+                visit_date: undefined,
+                visit_time: undefined,
+                call_date: updated.call_date || undefined,
+                call_time: updated.call_time || undefined,
+              }
+            : i,
+        ),
       )
       setDraftDates((prev) => ({
         ...prev,
@@ -416,7 +437,18 @@ function ProspectsPage() {
         clear_call_date: true,
       })
       setItems((prev) =>
-        prev.map((i) => (i.place_id === item.place_id ? { ...i, ...updated } : i)),
+        prev.map((i) =>
+          i.place_id === item.place_id
+            ? {
+                ...i,
+                ...updated,
+                call_date: undefined,
+                call_time: undefined,
+                visit_date: updated.visit_date || undefined,
+                visit_time: updated.visit_time || undefined,
+              }
+            : i,
+        ),
       )
       setDraftCallDates((prev) => ({
         ...prev,
@@ -539,22 +571,37 @@ function ProspectsPage() {
             const hasCall = !!item.call_date
             const hasVisit = !!item.visit_date
             const isScheduled = hasCall || hasVisit
+            const expanded = expandedIds.has(item.place_id)
 
             return (
               <li
                 key={item.place_id}
-                className={`prospects__card${isScheduled ? ' prospects__card--scheduled' : ''}`}
+                className={`prospects__card${expanded ? ' prospects__card--expanded' : ''}${
+                  isScheduled
+                    ? ' prospects__card--scheduled'
+                    : ' prospects__card--unscheduled'
+                }`}
               >
-                <div className="prospects__card-main">
-                  <div className="prospects__card-top">
-                    <h3 className="prospects__name">{item.name}</h3>
-                    <ContactStatusSelect
-                      value={isContacted ? 'contacted' : item.contact_status}
-                      disabled={statusBusy}
-                      onChange={(status) => handleContactStatus(item, status)}
-                    />
-                  </div>
-                  {isScheduled && (
+                <button
+                  type="button"
+                  className="prospects__card-summary"
+                  onClick={() => toggleExpanded(item.place_id)}
+                  aria-expanded={expanded}
+                  aria-controls={`prospects-detail-${item.place_id}`}
+                >
+                  <div className="prospects__card-summary-main">
+                    <div className="prospects__card-summary-top">
+                      <h3 className="prospects__name">{item.name}</h3>
+                      {isScheduled ? (
+                        <span className="prospects__scheduled-pill">
+                          {APP_STRINGS.prospects.scheduledLabel}
+                        </span>
+                      ) : (
+                        <span className="prospects__scheduled-pill prospects__scheduled-pill--muted">
+                          {APP_STRINGS.prospects.unscheduledLabel}
+                        </span>
+                      )}
+                    </div>
                     <div className="prospects__schedule-badges">
                       {hasCall && (
                         <span className="prospects__schedule-badge prospects__schedule-badge--call">
@@ -572,252 +619,282 @@ function ProspectsPage() {
                           </span>
                         </span>
                       )}
-                      <span className="prospects__scheduled-pill">
-                        {APP_STRINGS.prospects.scheduledLabel}
-                      </span>
+                      {!hasCall && !hasVisit && (
+                        <span className="prospects__schedule-badge prospects__schedule-badge--empty">
+                          {APP_STRINGS.prospects.unscheduledLabel}
+                        </span>
+                      )}
                     </div>
-                  )}
-                  {isContacted && savedOutcome && !contactDirty && (
-                    <p className="prospects__outcome-summary">
-                      {contactOutcomeLabel(savedOutcome)}
-                    </p>
-                  )}
-                  <p className="prospects__address">{item.address}</p>
-                  {item.phone && (
-                    <a className="prospects__phone" href={`tel:${item.phone}`}>
-                      {item.phone}
-                    </a>
-                  )}
-                  {item.rating != null && item.rating > 0 && (
-                    <span className="prospects__rating">
-                      ★ {item.rating.toFixed(1)}
-                    </span>
-                  )}
-                  {item.google_maps_uri && (
-                    <a
-                      className="prospects__link"
-                      href={item.google_maps_uri}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {APP_STRINGS.business.viewOnMaps}
-                    </a>
-                  )}
+                  </div>
+                  <span className="prospects__card-chevron" aria-hidden="true">
+                    {expanded ? '▾' : '▸'}
+                  </span>
+                  <span className="prospects__sr-only">
+                    {expanded
+                      ? APP_STRINGS.prospects.collapseCard
+                      : APP_STRINGS.prospects.expandCard}
+                  </span>
+                </button>
 
-                  {isContacted && (
-                    <div className="prospects__contact-form">
-                      <fieldset className="prospects__outcome" disabled={statusBusy}>
-                        <legend>{APP_STRINGS.prospects.outcomeLabel}</legend>
-                        {CONTACT_OUTCOME_OPTIONS.map((opt) => (
-                          <label key={opt.value} className={`prospects__outcome-opt ${opt.className}`}>
-                            <input
-                              type="radio"
-                              name={`outcome-${item.place_id}`}
-                              value={opt.value}
-                              checked={draftOutcome === opt.value}
-                              onChange={() =>
-                                setDraftOutcomes((prev) => ({
+                {expanded && (
+                  <div
+                    id={`prospects-detail-${item.place_id}`}
+                    className="prospects__card-detail"
+                  >
+                    <div className="prospects__card-main">
+                      <div className="prospects__card-top">
+                        <ContactStatusSelect
+                          value={isContacted ? 'contacted' : item.contact_status}
+                          disabled={statusBusy}
+                          onChange={(status) => handleContactStatus(item, status)}
+                        />
+                      </div>
+                      {isContacted && savedOutcome && !contactDirty && (
+                        <p className="prospects__outcome-summary">
+                          {contactOutcomeLabel(savedOutcome)}
+                        </p>
+                      )}
+                      <p className="prospects__address">{item.address}</p>
+                      {item.phone && (
+                        <a className="prospects__phone" href={`tel:${item.phone}`}>
+                          {item.phone}
+                        </a>
+                      )}
+                      {item.rating != null && item.rating > 0 && (
+                        <span className="prospects__rating">
+                          ★ {item.rating.toFixed(1)}
+                        </span>
+                      )}
+                      {item.google_maps_uri && (
+                        <a
+                          className="prospects__link"
+                          href={item.google_maps_uri}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {APP_STRINGS.business.viewOnMaps}
+                        </a>
+                      )}
+
+                      {isContacted && (
+                        <div className="prospects__contact-form">
+                          <fieldset className="prospects__outcome" disabled={statusBusy}>
+                            <legend>{APP_STRINGS.prospects.outcomeLabel}</legend>
+                            {CONTACT_OUTCOME_OPTIONS.map((opt) => (
+                              <label
+                                key={opt.value}
+                                className={`prospects__outcome-opt ${opt.className}`}
+                              >
+                                <input
+                                  type="radio"
+                                  name={`outcome-${item.place_id}`}
+                                  value={opt.value}
+                                  checked={draftOutcome === opt.value}
+                                  onChange={() =>
+                                    setDraftOutcomes((prev) => ({
+                                      ...prev,
+                                      [item.place_id]: opt.value,
+                                    }))
+                                  }
+                                />
+                                {opt.label}
+                              </label>
+                            ))}
+                          </fieldset>
+                          <label className="prospects__notes-field">
+                            <span>{APP_STRINGS.prospects.notesLabel}</span>
+                            <textarea
+                              rows={3}
+                              value={draftNote}
+                              placeholder={APP_STRINGS.prospects.notesPlaceholder}
+                              disabled={statusBusy}
+                              onChange={(e) =>
+                                setDraftNotes((prev) => ({
                                   ...prev,
-                                  [item.place_id]: opt.value,
+                                  [item.place_id]: e.target.value,
                                 }))
                               }
                             />
-                            {opt.label}
                           </label>
-                        ))}
-                      </fieldset>
-                      <label className="prospects__notes-field">
-                        <span>{APP_STRINGS.prospects.notesLabel}</span>
-                        <textarea
-                          rows={3}
-                          value={draftNote}
-                          placeholder={APP_STRINGS.prospects.notesPlaceholder}
-                          disabled={statusBusy}
-                          onChange={(e) =>
-                            setDraftNotes((prev) => ({
-                              ...prev,
-                              [item.place_id]: e.target.value,
-                            }))
-                          }
-                        />
-                      </label>
-                      {(contactDirty || !savedOutcome) && (
-                        <button
-                          type="button"
-                          className="prospects__date-save"
-                          onClick={() => handleSaveContact(item)}
-                          disabled={statusBusy || !draftOutcome}
-                        >
-                          {statusBusy
-                            ? APP_STRINGS.business.savingVisit
-                            : APP_STRINGS.prospects.saveContact}
-                        </button>
+                          {(contactDirty || !savedOutcome) && (
+                            <button
+                              type="button"
+                              className="prospects__date-save"
+                              onClick={() => handleSaveContact(item)}
+                              disabled={statusBusy || !draftOutcome}
+                            >
+                              {statusBusy
+                                ? APP_STRINGS.business.savingVisit
+                                : APP_STRINGS.prospects.saveContact}
+                            </button>
+                          )}
+                        </div>
                       )}
-                    </div>
-                  )}
 
-                  <div className="prospects__schedule">
-                    <div
-                      className={`prospects__date-row${hasCall ? ' prospects__date-row--scheduled' : ''}`}
-                    >
-                      <div className="prospects__datetime-fields">
-                        <label className="prospects__date-field">
-                          <span>{APP_STRINGS.prospects.callDateLabel}</span>
-                          <input
-                            type="date"
-                            value={callDraft}
-                            min={todayISODate()}
-                            onChange={(e) =>
-                              setDraftCallDates((prev) => ({
-                                ...prev,
-                                [item.place_id]: e.target.value,
-                              }))
-                            }
-                            disabled={callBusy}
-                          />
-                        </label>
-                        <label className="prospects__date-field">
-                          <span>{APP_STRINGS.prospects.callTimeLabel}</span>
-                          <select
-                            value={callTimeDraft}
-                            onChange={(e) =>
-                              setDraftCallTimes((prev) => ({
-                                ...prev,
-                                [item.place_id]: e.target.value,
-                              }))
-                            }
-                            disabled={callBusy}
-                          >
-                            {!timeOptions.includes(callTimeDraft) && (
-                              <option value="">
-                                {APP_STRINGS.prospects.callTimePlaceholder}
-                              </option>
+                      <div className="prospects__schedule">
+                        <div
+                          className={`prospects__date-row${hasCall ? ' prospects__date-row--scheduled' : ''}`}
+                        >
+                          <div className="prospects__datetime-fields">
+                            <label className="prospects__date-field">
+                              <span>{APP_STRINGS.prospects.callDateLabel}</span>
+                              <input
+                                type="date"
+                                value={callDraft}
+                                min={todayISODate()}
+                                onChange={(e) =>
+                                  setDraftCallDates((prev) => ({
+                                    ...prev,
+                                    [item.place_id]: e.target.value,
+                                  }))
+                                }
+                                disabled={callBusy}
+                              />
+                            </label>
+                            <label className="prospects__date-field">
+                              <span>{APP_STRINGS.prospects.callTimeLabel}</span>
+                              <select
+                                value={callTimeDraft}
+                                onChange={(e) =>
+                                  setDraftCallTimes((prev) => ({
+                                    ...prev,
+                                    [item.place_id]: e.target.value,
+                                  }))
+                                }
+                                disabled={callBusy}
+                              >
+                                {!timeOptions.includes(callTimeDraft) && (
+                                  <option value="">
+                                    {APP_STRINGS.prospects.callTimePlaceholder}
+                                  </option>
+                                )}
+                                {timeOptions.map((t) => (
+                                  <option key={t} value={t}>
+                                    {t}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                          <div className="prospects__date-meta">
+                            <span className="prospects__date-hint">
+                              {item.call_date
+                                ? formatCallDateTime(item.call_date, item.call_time)
+                                : APP_STRINGS.prospects.noCallDate}
+                            </span>
+                            {(callDirty || !item.call_date) && (
+                              <button
+                                type="button"
+                                className="prospects__date-save"
+                                onClick={() => handleSaveCallDate(item)}
+                                disabled={callBusy || !callDraft || !callTimeDraft}
+                              >
+                                {callBusy
+                                  ? APP_STRINGS.business.savingVisit
+                                  : APP_STRINGS.prospects.saveDate}
+                              </button>
                             )}
-                            {timeOptions.map((t) => (
-                              <option key={t} value={t}>
-                                {t}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-                      <div className="prospects__date-meta">
-                        <span className="prospects__date-hint">
-                          {item.call_date
-                            ? formatCallDateTime(item.call_date, item.call_time)
-                            : APP_STRINGS.prospects.noCallDate}
-                        </span>
-                        {(callDirty || !item.call_date) && (
-                          <button
-                            type="button"
-                            className="prospects__date-save"
-                            onClick={() => handleSaveCallDate(item)}
-                            disabled={callBusy || !callDraft || !callTimeDraft}
-                          >
-                            {callBusy
-                              ? APP_STRINGS.business.savingVisit
-                              : APP_STRINGS.prospects.saveDate}
-                          </button>
-                        )}
-                        {!!item.call_date && (
-                          <button
-                            type="button"
-                            className="prospects__date-save"
-                            onClick={() => handleClearCallDate(item)}
-                            disabled={callBusy}
-                          >
-                            {APP_STRINGS.prospects.clearDate}
-                          </button>
-                        )}
+                            {!!item.call_date && (
+                              <button
+                                type="button"
+                                className="prospects__date-save"
+                                onClick={() => handleClearCallDate(item)}
+                                disabled={callBusy}
+                              >
+                                {APP_STRINGS.prospects.clearDate}
+                              </button>
+                            )}
+                          </div>
+                        </div>
+
+                        <div
+                          className={`prospects__date-row${hasVisit ? ' prospects__date-row--scheduled' : ''}`}
+                        >
+                          <div className="prospects__datetime-fields">
+                            <label className="prospects__date-field">
+                              <span>{APP_STRINGS.prospects.visitDateLabel}</span>
+                              <input
+                                type="date"
+                                value={draft}
+                                min={todayISODate()}
+                                onChange={(e) =>
+                                  setDraftDates((prev) => ({
+                                    ...prev,
+                                    [item.place_id]: e.target.value,
+                                  }))
+                                }
+                                disabled={dateBusy}
+                              />
+                            </label>
+                            <label className="prospects__date-field">
+                              <span>{APP_STRINGS.prospects.visitTimeLabel}</span>
+                              <select
+                                value={visitTimeDraft}
+                                onChange={(e) =>
+                                  setDraftVisitTimes((prev) => ({
+                                    ...prev,
+                                    [item.place_id]: e.target.value,
+                                  }))
+                                }
+                                disabled={dateBusy}
+                              >
+                                {!timeOptions.includes(visitTimeDraft) && (
+                                  <option value="">
+                                    {APP_STRINGS.prospects.visitTimePlaceholder}
+                                  </option>
+                                )}
+                                {timeOptions.map((t) => (
+                                  <option key={t} value={t}>
+                                    {t}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                          <div className="prospects__date-meta">
+                            <span className="prospects__date-hint">
+                              {item.visit_date
+                                ? formatCallDateTime(item.visit_date, item.visit_time)
+                                : APP_STRINGS.prospects.noVisitDate}
+                            </span>
+                            {(dirty || !item.visit_date) && (
+                              <button
+                                type="button"
+                                className="prospects__date-save"
+                                onClick={() => handleSaveVisitDate(item)}
+                                disabled={dateBusy || !draft || !visitTimeDraft}
+                              >
+                                {dateBusy
+                                  ? APP_STRINGS.business.savingVisit
+                                  : APP_STRINGS.prospects.saveDate}
+                              </button>
+                            )}
+                            {!!item.visit_date && (
+                              <button
+                                type="button"
+                                className="prospects__date-save"
+                                onClick={() => handleClearVisitDate(item)}
+                                disabled={dateBusy}
+                              >
+                                {APP_STRINGS.prospects.clearDate}
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </div>
-
-                    <div
-                      className={`prospects__date-row${hasVisit ? ' prospects__date-row--scheduled' : ''}`}
-                    >
-                      <div className="prospects__datetime-fields">
-                        <label className="prospects__date-field">
-                          <span>{APP_STRINGS.prospects.visitDateLabel}</span>
-                          <input
-                            type="date"
-                            value={draft}
-                            min={todayISODate()}
-                            onChange={(e) =>
-                              setDraftDates((prev) => ({
-                                ...prev,
-                                [item.place_id]: e.target.value,
-                              }))
-                            }
-                            disabled={dateBusy}
-                          />
-                        </label>
-                        <label className="prospects__date-field">
-                          <span>{APP_STRINGS.prospects.visitTimeLabel}</span>
-                          <select
-                            value={visitTimeDraft}
-                            onChange={(e) =>
-                              setDraftVisitTimes((prev) => ({
-                                ...prev,
-                                [item.place_id]: e.target.value,
-                              }))
-                            }
-                            disabled={dateBusy}
-                          >
-                            {!timeOptions.includes(visitTimeDraft) && (
-                              <option value="">
-                                {APP_STRINGS.prospects.visitTimePlaceholder}
-                              </option>
-                            )}
-                            {timeOptions.map((t) => (
-                              <option key={t} value={t}>
-                                {t}
-                              </option>
-                            ))}
-                          </select>
-                        </label>
-                      </div>
-                      <div className="prospects__date-meta">
-                        <span className="prospects__date-hint">
-                          {item.visit_date
-                            ? formatCallDateTime(item.visit_date, item.visit_time)
-                            : APP_STRINGS.prospects.noVisitDate}
-                        </span>
-                        {(dirty || !item.visit_date) && (
-                          <button
-                            type="button"
-                            className="prospects__date-save"
-                            onClick={() => handleSaveVisitDate(item)}
-                            disabled={dateBusy || !draft || !visitTimeDraft}
-                          >
-                            {dateBusy
-                              ? APP_STRINGS.business.savingVisit
-                              : APP_STRINGS.prospects.saveDate}
-                          </button>
-                        )}
-                        {!!item.visit_date && (
-                          <button
-                            type="button"
-                            className="prospects__date-save"
-                            onClick={() => handleClearVisitDate(item)}
-                            disabled={dateBusy}
-                          >
-                            {APP_STRINGS.prospects.clearDate}
-                          </button>
-                        )}
-                      </div>
+                    <div className="prospects__card-actions">
+                      <button
+                        type="button"
+                        className="prospects__remove"
+                        onClick={() => handleRemove(item.place_id)}
+                        disabled={removingId === item.place_id}
+                      >
+                        {APP_STRINGS.prospects.remove}
+                      </button>
                     </div>
                   </div>
-                </div>
-                <div className="prospects__card-actions">
-                  <button
-                    type="button"
-                    className="prospects__remove"
-                    onClick={() => handleRemove(item.place_id)}
-                    disabled={removingId === item.place_id}
-                  >
-                    {APP_STRINGS.prospects.remove}
-                  </button>
-                </div>
+                )}
               </li>
             )
           })}
