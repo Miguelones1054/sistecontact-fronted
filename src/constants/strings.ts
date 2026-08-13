@@ -41,6 +41,22 @@ export const APP_STRINGS = {
     emptyProspects: 'Aún no tienes prospectos agregados.',
     emptyOutcomes: 'Aún no hay contactos clasificados.',
     emptyVisits: 'Aún no hay visitas con resultado registrado.',
+    calendarTitle: 'Google Calendar',
+    calendarSubtitle:
+      'Conecta tu cuenta para recibir recordatorios de llamadas y visitas agendadas.',
+    calendarConnected: 'Conectado',
+    calendarDisconnected: 'No conectado',
+    calendarNotConfigured:
+      'Google Calendar aún no está habilitado en el servidor. Configura las credenciales OAuth.',
+    calendarConnect: 'Conectar Google Calendar',
+    calendarDisconnect: 'Desconectar',
+    calendarConnecting: 'Redirigiendo...',
+    calendarDisconnecting: 'Desconectando...',
+    calendarLoadError: 'No se pudo cargar el estado de Google Calendar',
+    calendarConnectError: 'No se pudo iniciar la conexión con Google Calendar',
+    calendarDisconnectError: 'No se pudo desconectar Google Calendar',
+    calendarConnectedFlash: 'Google Calendar conectado correctamente.',
+    calendarErrorFlash: 'No se pudo completar la conexión con Google Calendar.',
   },
   login: {
     subtitle: 'Inicia sesión para continuar',

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { APP_STRINGS } from '../../constants/strings'
@@ -11,6 +11,26 @@ function AppShell() {
   const { user, logout } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
+  const [calendarFlash, setCalendarFlash] = useState<'connected' | 'error' | null>(
+    null,
+  )
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const gcal = params.get('google_calendar')
+    if (gcal !== 'connected' && gcal !== 'error') return
+
+    setCalendarFlash(gcal)
+    setProfileOpen(true)
+    params.delete('google_calendar')
+    const next = params.toString()
+    const path = `${window.location.pathname}${next ? `?${next}` : ''}${window.location.hash}`
+    window.history.replaceState({}, '', path)
+  }, [])
+
+  const clearCalendarFlash = useCallback(() => {
+    setCalendarFlash(null)
+  }, [])
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -93,7 +113,12 @@ function AppShell() {
           <Outlet />
         </div>
 
-        <ProfilePanel open={profileOpen} onClose={() => setProfileOpen(false)} />
+        <ProfilePanel
+          open={profileOpen}
+          onClose={() => setProfileOpen(false)}
+          calendarFlash={calendarFlash}
+          onCalendarFlashConsumed={clearCalendarFlash}
+        />
       </div>
     </SchedulingSettingsProvider>
   )

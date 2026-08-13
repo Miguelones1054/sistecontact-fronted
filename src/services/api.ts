@@ -13,6 +13,8 @@ import type {
   Visit,
   Zone,
   SchedulingSettings,
+  GoogleCalendarStatus,
+  GoogleCalendarConnectResponse,
 } from '../types/api'
 
 const PROD_API_ORIGIN = 'https://apisistecontact.nodefex.com'
@@ -231,5 +233,31 @@ export async function upsertSchedulingSettings(
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchGoogleCalendarStatus(
+  signal?: AbortSignal,
+): Promise<GoogleCalendarStatus> {
+  const headers = await authHeaders()
+  return request<GoogleCalendarStatus>('/integrations/google-calendar', {
+    signal,
+    headers,
+  })
+}
+
+export async function fetchGoogleCalendarConnectURL(): Promise<GoogleCalendarConnectResponse> {
+  const headers = await authHeaders()
+  return request<GoogleCalendarConnectResponse>(
+    '/integrations/google-calendar/connect',
+    { headers },
+  )
+}
+
+export async function disconnectGoogleCalendar(): Promise<{ disconnected: boolean }> {
+  const headers = await authHeaders()
+  return request<{ disconnected: boolean }>('/integrations/google-calendar', {
+    method: 'DELETE',
+    headers,
   })
 }

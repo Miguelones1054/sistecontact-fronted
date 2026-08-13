@@ -1,8 +1,14 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import { APP_STRINGS } from '../../constants/strings'
-import { fetchProspectsList, fetchVisits } from '../../services/api'
-import type { Prospect, Visit } from '../../types/api'
+import {
+  disconnectGoogleCalendar,
+  fetchGoogleCalendarConnectURL,
+  fetchGoogleCalendarStatus,
+  fetchProspectsList,
+  fetchVisits,
+} from '../../services/api'
+import type { GoogleCalendarStatus, Prospect, Visit } from '../../types/api'
 import {
   CONTACT_OUTCOME_OPTIONS,
   CONTACT_STATUS_OPTIONS,
@@ -15,6 +21,8 @@ import './ProfilePanel.css'
 interface Props {
   open: boolean
   onClose: () => void
+  calendarFlash?: 'connected' | 'error' | null
+  onCalendarFlashConsumed?: () => void
 }
 
 interface BarItem {
@@ -128,12 +136,22 @@ function computeVisitStats(visits: Visit[]) {
   }
 }
 
-function ProfilePanel({ open, onClose }: Props) {
+function ProfilePanel({
+  open,
+  onClose,
+  calendarFlash = null,
+  onCalendarFlashConsumed,
+}: Props) {
   const { user } = useAuth()
   const [prospects, setProspects] = useState<Prospect[]>([])
   const [visits, setVisits] = useState<Visit[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [calendar, setCalendar] = useState<GoogleCalendarStatus | null>(null)
+  const [calendarLoading, setCalendarLoading] = useState(false)
+  const [calendarError, setCalendarError] = useState('')
+  const [calendarBusy, setCalendarBusy] = useState(false)
+  const [flash, setFlash] = useState<'connected' | 'error' | null>(null)
 
   useEffect(() => {
     if (!open) return
@@ -160,12 +178,75 @@ function ProfilePanel({ open, onClose }: Props) {
 
   useEffect(() => {
     if (!open) return
+    const ac = new AbortController()
+    setCalendarLoading(true)
+    setCalendarError('')
+    fetchGoogleCalendarStatus(ac.signal)
+      .then((status) => setCalendar(status))
+      .catch((err) => {
+        if (err.name === 'AbortError') return
+        setCalendarError(
+          err instanceof Error
+            ? err.message
+            : APP_STRINGS.profile.calendarLoadError,
+        )
+      })
+      .finally(() => setCalendarLoading(false))
+    return () => ac.abort()
+  }, [open])
+
+  useEffect(() => {
+    if (!open || !calendarFlash) return
+    setFlash(calendarFlash)
+    onCalendarFlashConsumed?.()
+  }, [open, calendarFlash, onCalendarFlashConsumed])
+
+  useEffect(() => {
+    if (!open) return
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') onClose()
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [open, onClose])
+
+  async function handleConnectCalendar() {
+    setCalendarBusy(true)
+    setCalendarError('')
+    try {
+      const { auth_url: authURL } = await fetchGoogleCalendarConnectURL()
+      window.location.assign(authURL)
+    } catch (err) {
+      setCalendarBusy(false)
+      setCalendarError(
+        err instanceof Error
+          ? err.message
+          : APP_STRINGS.profile.calendarConnectError,
+      )
+    }
+  }
+
+  async function handleDisconnectCalendar() {
+    setCalendarBusy(true)
+    setCalendarError('')
+    setFlash(null)
+    try {
+      await disconnectGoogleCalendar()
+      setCalendar((prev) =>
+        prev
+          ? { ...prev, connected: false, email: undefined, connected_at: undefined }
+          : { configured: true, connected: false },
+      )
+    } catch (err) {
+      setCalendarError(
+        err instanceof Error
+          ? err.message
+          : APP_STRINGS.profile.calendarDisconnectError,
+      )
+    } finally {
+      setCalendarBusy(false)
+    }
+  }
 
   const prospectStats = useMemo(
     () => computeProspectStats(prospects),
@@ -199,6 +280,9 @@ function ProfilePanel({ open, onClose }: Props) {
 
   if (!open) return null
 
+  const calendarConfigured = calendar?.configured ?? false
+  const calendarConnected = calendar?.connected ?? false
+
   return (
     <div className="profile-panel" role="dialog" aria-modal="true" aria-labelledby="profile-panel-title">
       <button
@@ -223,6 +307,88 @@ function ProfilePanel({ open, onClose }: Props) {
             {APP_STRINGS.profile.close}
           </button>
         </header>
+
+        <section className="profile-panel__calendar">
+          <div className="profile-panel__calendar-head">
+            <h3 className="profile-panel__calendar-title">
+              {APP_STRINGS.profile.calendarTitle}
+            </h3>
+            {!calendarLoading && calendarConfigured && (
+              <span
+                className={`profile-panel__calendar-pill${
+                  calendarConnected
+                    ? ' profile-panel__calendar-pill--on'
+                    : ' profile-panel__calendar-pill--off'
+                }`}
+              >
+                {calendarConnected
+                  ? APP_STRINGS.profile.calendarConnected
+                  : APP_STRINGS.profile.calendarDisconnected}
+              </span>
+            )}
+          </div>
+          <p className="profile-panel__calendar-subtitle">
+            {APP_STRINGS.profile.calendarSubtitle}
+          </p>
+
+          {flash === 'connected' && (
+            <p className="profile-panel__calendar-flash profile-panel__calendar-flash--ok">
+              {APP_STRINGS.profile.calendarConnectedFlash}
+            </p>
+          )}
+          {flash === 'error' && (
+            <p className="profile-panel__calendar-flash profile-panel__calendar-flash--err">
+              {APP_STRINGS.profile.calendarErrorFlash}
+            </p>
+          )}
+
+          {calendarLoading && (
+            <p className="profile-panel__hint">{APP_STRINGS.profile.loading}</p>
+          )}
+          {calendarError && (
+            <p className="profile-panel__error">{calendarError}</p>
+          )}
+
+          {!calendarLoading && calendar && !calendarConfigured && (
+            <p className="profile-panel__calendar-note">
+              {APP_STRINGS.profile.calendarNotConfigured}
+            </p>
+          )}
+
+          {!calendarLoading && calendarConfigured && calendarConnected && (
+            <p className="profile-panel__calendar-account">
+              {calendar.email}
+            </p>
+          )}
+
+          {!calendarLoading && calendarConfigured && (
+            <div className="profile-panel__calendar-actions">
+              {calendarConnected ? (
+                <button
+                  type="button"
+                  className="profile-panel__calendar-btn profile-panel__calendar-btn--ghost"
+                  onClick={handleDisconnectCalendar}
+                  disabled={calendarBusy}
+                >
+                  {calendarBusy
+                    ? APP_STRINGS.profile.calendarDisconnecting
+                    : APP_STRINGS.profile.calendarDisconnect}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  className="profile-panel__calendar-btn"
+                  onClick={handleConnectCalendar}
+                  disabled={calendarBusy}
+                >
+                  {calendarBusy
+                    ? APP_STRINGS.profile.calendarConnecting
+                    : APP_STRINGS.profile.calendarConnect}
+                </button>
+              )}
+            </div>
+          )}
+        </section>
 
         {loading && (
           <p className="profile-panel__hint">{APP_STRINGS.profile.loading}</p>

@@ -199,6 +199,133 @@
   transition: width 0.35s ease;
 }
 
+.profile-panel__calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f7fafc;
+}
+
+.profile-panel__calendar-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.profile-panel__calendar-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.profile-panel__calendar-subtitle {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #4a5568;
+}
+
+.profile-panel__calendar-pill {
+  flex-shrink: 0;
+  padding: 0.15rem 0.5rem;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 999px;
+}
+
+.profile-panel__calendar-pill--on {
+  color: #22543d;
+  background: #c6f6d5;
+}
+
+.profile-panel__calendar-pill--off {
+  color: #718096;
+  background: #edf2f7;
+}
+
+.profile-panel__calendar-account {
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d3748;
+  word-break: break-word;
+}
+
+.profile-panel__calendar-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  color: #744210;
+  background: #fefcbf;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+
+.profile-panel__calendar-flash {
+  margin: 0;
+  font-size: 0.82rem;
+  font-weight: 600;
+  border-radius: 8px;
+  padding: 0.5rem 0.65rem;
+}
+
+.profile-panel__calendar-flash--ok {
+  color: #22543d;
+  background: #c6f6d5;
+}
+
+.profile-panel__calendar-flash--err {
+  color: #742a2a;
+  background: #fed7d7;
+}
+
+.profile-panel__calendar-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.2rem;
+}
+
+.profile-panel__calendar-btn {
+  padding: 0.5rem 0.85rem;
+  min-height: 2.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #fff;
+  background: #2b6cb0;
+  border: 1px solid #2b6cb0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.profile-panel__calendar-btn:hover:not(:disabled) {
+  background: #2c5282;
+  border-color: #2c5282;
+}
+
+.profile-panel__calendar-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.profile-panel__calendar-btn--ghost {
+  color: #742a2a;
+  background: #fff;
+  border-color: #feb2b2;
+}
+
+.profile-panel__calendar-btn--ghost:hover:not(:disabled) {
+  background: #fff5f5;
+  border-color: #fc8181;
+}
+
 @media (min-width: 640px) {
   .profile-panel__sheet {
     width: min(100%, 28rem);

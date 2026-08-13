@@ -165,3 +165,14 @@ export interface SchedulingSettings {
 export interface UpsertSchedulingSettingsPayload {
   appointment_interval_minutes: number
 }
+
+export interface GoogleCalendarStatus {
+  configured: boolean
+  connected: boolean
+  email?: string
+  connected_at?: string
+}
+
+export interface GoogleCalendarConnectResponse {
+  auth_url: string
+}
