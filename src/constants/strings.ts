@@ -82,6 +82,11 @@ export const APP_STRINGS = {
     passwordMismatch: 'Las contraseñas no coinciden.',
     passwordTooShort: 'La contraseña debe tener al menos 6 caracteres.',
     rememberCredentials: 'Recordar credenciales',
+    membershipBanner:
+      'No tienes membresía activa. Puedes ver el panel, pero para usar SisteContact debes activarla.',
+    membershipAction: 'Adquirir membresía',
+    membershipRefresh: 'Ya la activé',
+    membershipUrl: 'https://www.nodefex.com/sistecontact',
     noRegisterHint:
       'Después de registrarte, activa tu membresía en www.nodefex.com/sistecontact',
     logout: 'Cerrar sesión',

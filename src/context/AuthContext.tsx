@@ -25,10 +25,12 @@ import { APP_STRINGS } from '../constants/strings'
 interface AuthContextValue {
   user: User | null
   loading: boolean
+  membershipEnabled: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<void>
   loginWithGoogle: () => Promise<void>
   logout: () => Promise<void>
+  refreshMembership: () => Promise<void>
 }
 
 type AuthAction = 'login' | 'register' | 'google'
@@ -82,27 +84,21 @@ function clearGoogleLoginParam() {
   window.history.replaceState({}, '', next)
 }
 
-async function assertSistecontactAccess(): Promise<void> {
-  const access = await fetchAccessSettings()
-  if (!isSistecontactEnabled(access.sistecontact_enabled)) {
-    await signOut(auth)
-    throw new Error(APP_STRINGS.login.errors.noAccess)
+async function loadMembership(): Promise<boolean> {
+  try {
+    const access = await fetchAccessSettings()
+    return isSistecontactEnabled(access.sistecontact_enabled)
+  } catch {
+    return false
   }
 }
 
 async function wrapAuthAction(action: AuthAction, run: () => Promise<void>): Promise<void> {
   try {
     await run()
-    await assertSistecontactAccess()
   } catch (err) {
-    if (auth.currentUser) {
-      await signOut(auth).catch(() => undefined)
-    }
     if (err instanceof Error && err.message === APP_STRINGS.login.errors.noAccess) {
       throw err
-    }
-    if (err instanceof Error && err.message.includes('membresía activa')) {
-      throw new Error(APP_STRINGS.login.errors.noAccess)
     }
     const code =
       typeof err === 'object' && err !== null && 'code' in err
@@ -121,6 +117,7 @@ async function wrapAuthAction(action: AuthAction, run: () => Promise<void>): Pro
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [loading, setLoading] = useState(true)
+  const [membershipEnabled, setMembershipEnabled] = useState(false)
   const completingGoogleRef = useRef(false)
 
   useEffect(() => {
@@ -134,18 +131,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!next) {
           if (completingGoogleRef.current) return
           setUser(null)
+          setMembershipEnabled(false)
           setLoading(false)
           return
         }
         setLoading(true)
-        try {
-          await assertSistecontactAccess()
-          setUser(next)
-        } catch {
-          setUser(null)
-        } finally {
-          setLoading(false)
-        }
+        const enabled = await loadMembership()
+        setMembershipEnabled(enabled)
+        setUser(next)
+        setLoading(false)
       })()
     })
 
@@ -160,6 +154,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           await signOut(auth).catch(() => undefined)
           sessionStorage.setItem('sistecontact.googleLoginError', '1')
           setUser(null)
+          setMembershipEnabled(false)
           setLoading(false)
         } finally {
           completingGoogleRef.current = false
@@ -197,9 +192,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signOut(auth)
   }, [])
 
+  const refreshMembership = useCallback(async () => {
+    if (!auth.currentUser) {
+      setMembershipEnabled(false)
+      return
+    }
+    const enabled = await loadMembership()
+    setMembershipEnabled(enabled)
+  }, [])
+
   const value = useMemo(
-    () => ({ user, loading, login, register, loginWithGoogle, logout }),
-    [user, loading, login, register, loginWithGoogle, logout],
+    () => ({
+      user,
+      loading,
+      membershipEnabled,
+      login,
+      register,
+      loginWithGoogle,
+      logout,
+      refreshMembership,
+    }),
+    [
+      user,
+      loading,
+      membershipEnabled,
+      login,
+      register,
+      loginWithGoogle,
+      logout,
+      refreshMembership,
+    ],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

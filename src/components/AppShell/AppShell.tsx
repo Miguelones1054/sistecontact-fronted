@@ -9,8 +9,9 @@ import ScheduleIntervalBar from '../ScheduleIntervalBar/ScheduleIntervalBar'
 import './AppShell.css'
 
 function AppShell() {
-  const { user, logout } = useAuth()
+  const { user, logout, membershipEnabled, refreshMembership } = useAuth()
   const [loggingOut, setLoggingOut] = useState(false)
+  const [checkingMembership, setCheckingMembership] = useState(false)
   const [profileOpen, setProfileOpen] = useState(false)
   const [calendarFlash, setCalendarFlash] = useState<'connected' | 'error' | null>(
     null,
@@ -39,6 +40,15 @@ function AppShell() {
       await logout()
     } finally {
       setLoggingOut(false)
+    }
+  }
+
+  async function handleRefreshMembership() {
+    setCheckingMembership(true)
+    try {
+      await refreshMembership()
+    } finally {
+      setCheckingMembership(false)
     }
   }
 
@@ -116,10 +126,50 @@ function AppShell() {
           </NavLink>
         </nav>
 
-        <ScheduleIntervalBar />
+        {!membershipEnabled && (
+          <div className="app-shell__membership" role="status">
+            <p className="app-shell__membership-text">
+              {APP_STRINGS.login.membershipBanner}{' '}
+              <a
+                className="app-shell__membership-link"
+                href={APP_STRINGS.login.membershipUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {APP_STRINGS.login.membershipAction}
+              </a>
+            </p>
+            <button
+              type="button"
+              className="app-shell__membership-refresh"
+              onClick={() => void handleRefreshMembership()}
+              disabled={checkingMembership}
+            >
+              {checkingMembership
+                ? APP_STRINGS.login.checkingSession
+                : APP_STRINGS.login.membershipRefresh}
+            </button>
+          </div>
+        )}
+
+        {membershipEnabled && <ScheduleIntervalBar />}
 
         <div className="app-shell__content">
-          <Outlet />
+          {membershipEnabled ? (
+            <Outlet />
+          ) : (
+            <div className="app-shell__membership-panel">
+              <p>{APP_STRINGS.login.errors.noAccess}</p>
+              <a
+                className="app-shell__membership-cta"
+                href={APP_STRINGS.login.membershipUrl}
+                target="_blank"
+                rel="noreferrer"
+              >
+                {APP_STRINGS.login.membershipAction}
+              </a>
+            </div>
+          )}
         </div>
 
         <ProfilePanel

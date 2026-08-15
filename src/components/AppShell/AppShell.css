@@ -121,10 +121,92 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.25rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.85rem;
   padding: 0.25rem;
   background: #edf2f7;
   border-radius: 10px;
+}
+
+.app-shell__membership {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem 1rem;
+  margin-bottom: 1rem;
+  padding: 0.85rem 1rem;
+  background: #fffbeb;
+  border: 1px solid #f6e05e;
+  border-radius: 10px;
+}
+
+.app-shell__membership-text {
+  margin: 0;
+  flex: 1;
+  min-width: 12rem;
+  color: #744210;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.app-shell__membership-link {
+  color: #2b6cb0;
+  font-weight: 700;
+}
+
+.app-shell__membership-refresh,
+.app-shell__membership-cta {
+  flex-shrink: 0;
+  padding: 0.5rem 0.8rem;
+  min-height: 2.35rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.app-shell__membership-refresh {
+  color: #744210;
+  background: #fff;
+  border: 1px solid #ecc94b;
+}
+
+.app-shell__membership-refresh:hover:not(:disabled) {
+  background: #fefcbf;
+}
+
+.app-shell__membership-refresh:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.app-shell__membership-panel {
+  padding: 1.5rem 1rem;
+  text-align: center;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+}
+
+.app-shell__membership-panel p {
+  margin: 0 0 1rem;
+  color: #2d3748;
+  font-size: 1rem;
+  line-height: 1.45;
+}
+
+.app-shell__membership-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+  color: #fff;
+  background: #2b6cb0;
+  border: none;
+}
+
+.app-shell__membership-cta:hover {
+  background: #2c5282;
 }
 
 .app-shell__tab {
