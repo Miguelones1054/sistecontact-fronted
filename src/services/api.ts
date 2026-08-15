@@ -266,6 +266,16 @@ export async function completeGoogleAuth(
   })
 }
 
+export async function completeGoogleAuthWithIDToken(
+  idToken: string,
+): Promise<GoogleAuthCompleteResponse> {
+  return request<GoogleAuthCompleteResponse>('/auth/google/session', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ id_token: idToken }),
+  })
+}
+
 export async function fetchGoogleCalendarStatus(
   signal?: AbortSignal,
 ): Promise<GoogleCalendarStatus> {

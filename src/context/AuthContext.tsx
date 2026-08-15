@@ -19,7 +19,7 @@ import {
   type User,
 } from 'firebase/auth'
 import { auth } from '../lib/firebase'
-import { completeGoogleAuth, fetchAccessSettings, fetchGoogleAuthURL } from '../services/api'
+import { completeGoogleAuth, completeGoogleAuthWithIDToken, fetchAccessSettings } from '../services/api'
 import { APP_STRINGS } from '../constants/strings'
 
 interface AuthContextValue {
@@ -177,15 +177,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
-  const loginWithGoogle = useCallback(async (intent: 'login' | 'register' = 'login') => {
-    try {
-      const { auth_url: authURL } = await fetchGoogleAuthURL(intent)
-      window.location.assign(authURL)
-    } catch {
-      await wrapAuthAction('google', () =>
-        signInWithPopup(auth, googleProvider).then(() => undefined),
-      )
-    }
+  const loginWithGoogle = useCallback(async (_intent: 'login' | 'register' = 'login') => {
+    await wrapAuthAction('google', async () => {
+      try {
+        await signInWithPopup(auth, googleProvider)
+      } catch (err) {
+        const code =
+          typeof err === 'object' && err !== null && 'code' in err
+            ? String((err as { code: string }).code)
+            : ''
+        if (code !== 'auth/account-exists-with-different-credential') {
+          throw err
+        }
+        const cred = GoogleAuthProvider.credentialFromError(err as Error)
+        const idToken = cred?.idToken
+        if (!idToken) {
+          throw err
+        }
+        const { custom_token: customToken } = await completeGoogleAuthWithIDToken(idToken)
+        await signInWithCustomToken(auth, customToken)
+      }
+    })
   }, [])
 
   const logout = useCallback(async () => {
