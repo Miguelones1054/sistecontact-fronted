@@ -185,3 +185,11 @@ export interface GoogleCalendarStatus {
 export interface GoogleCalendarConnectResponse {
   auth_url: string
 }
+
+export interface GoogleAuthURLResponse {
+  auth_url: string
+}
+
+export interface GoogleAuthCompleteResponse {
+  custom_token: string
+}

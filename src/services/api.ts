@@ -16,6 +16,8 @@ import type {
   AccessSettings,
   GoogleCalendarStatus,
   GoogleCalendarConnectResponse,
+  GoogleAuthURLResponse,
+  GoogleAuthCompleteResponse,
 } from '../types/api'
 
 const PROD_API_ORIGIN = 'https://apisistecontact.nodefex.com'
@@ -244,6 +246,20 @@ export async function upsertSchedulingSettings(
     method: 'PUT',
     headers,
     body: JSON.stringify(payload),
+  })
+}
+
+export async function fetchGoogleAuthURL(): Promise<GoogleAuthURLResponse> {
+  return request<GoogleAuthURLResponse>('/auth/google')
+}
+
+export async function completeGoogleAuth(
+  ticket: string,
+): Promise<GoogleAuthCompleteResponse> {
+  return request<GoogleAuthCompleteResponse>('/auth/google/complete', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ticket }),
   })
 }
 
