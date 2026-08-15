@@ -249,8 +249,11 @@ export async function upsertSchedulingSettings(
   })
 }
 
-export async function fetchGoogleAuthURL(): Promise<GoogleAuthURLResponse> {
-  return request<GoogleAuthURLResponse>('/auth/google')
+export async function fetchGoogleAuthURL(
+  intent: 'login' | 'register' = 'login',
+): Promise<GoogleAuthURLResponse> {
+  const q = intent === 'register' ? '?intent=register' : '?intent=login'
+  return request<GoogleAuthURLResponse>(`/auth/google${q}`)
 }
 
 export async function completeGoogleAuth(

@@ -130,7 +130,7 @@ function Login() {
     setError('')
     setPending('google')
     try {
-      await loginWithGoogle()
+      await loginWithGoogle(isRegister ? 'register' : 'login')
     } catch (err) {
       setError(err instanceof Error ? err.message : APP_STRINGS.login.errors.genericGoogle)
     } finally {

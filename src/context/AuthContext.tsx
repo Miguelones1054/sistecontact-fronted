@@ -28,7 +28,7 @@ interface AuthContextValue {
   membershipEnabled: boolean
   login: (email: string, password: string) => Promise<void>
   register: (email: string, password: string) => Promise<void>
-  loginWithGoogle: () => Promise<void>
+  loginWithGoogle: (intent?: 'login' | 'register') => Promise<void>
   logout: () => Promise<void>
   refreshMembership: () => Promise<void>
 }
@@ -177,9 +177,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     )
   }, [])
 
-  const loginWithGoogle = useCallback(async () => {
+  const loginWithGoogle = useCallback(async (intent: 'login' | 'register' = 'login') => {
     try {
-      const { auth_url: authURL } = await fetchGoogleAuthURL()
+      const { auth_url: authURL } = await fetchGoogleAuthURL(intent)
       window.location.assign(authURL)
     } catch {
       await wrapAuthAction('google', () =>
