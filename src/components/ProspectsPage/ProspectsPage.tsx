@@ -27,6 +27,7 @@ import ContactStatusSelect, {
   normalizeContactOutcome,
   normalizeContactStatus,
 } from '../ContactStatusSelect/ContactStatusSelect'
+import WhatsAppChat from '../WhatsAppChat/WhatsAppChat'
 import './ProspectsPage.css'
 
 type StatusFilter = ContactStatus | ContactOutcome | 'all'
@@ -665,6 +666,11 @@ function ProspectsPage() {
                           {item.phone}
                         </a>
                       )}
+                      <WhatsAppChat
+                        phone={item.phone}
+                        businessName={item.name}
+                        id={item.place_id}
+                      />
                       {item.rating != null && item.rating > 0 && (
                         <span className="prospects__rating">
                           ★ {item.rating.toFixed(1)}

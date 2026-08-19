@@ -178,6 +178,12 @@ export const APP_STRINGS = {
     calendarSyncError: (detail: string) =>
       `Agenda guardada, pero no se pudo sincronizar con Google Calendar: ${detail}`,
   },
+  whatsapp: {
+    chat: 'Chatear por WhatsApp',
+    messageLabel: 'Mensaje para WhatsApp',
+    messagePlaceholder: 'Escribe el mensaje que enviarás al comercio...',
+    invalidPhone: 'Este teléfono no se puede usar en WhatsApp.',
+  },
   visits: {
     title: 'Por Contactar',
     subtitle:
