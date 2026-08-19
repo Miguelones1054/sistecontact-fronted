@@ -18,6 +18,7 @@ import {
   signOut,
   type User,
 } from 'firebase/auth'
+import { FirebaseError } from 'firebase/app'
 import { auth } from '../lib/firebase'
 import { completeGoogleAuth, completeGoogleAuthWithIDToken, fetchAccessSettings } from '../services/api'
 import { APP_STRINGS } from '../constants/strings'
@@ -182,14 +183,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         await signInWithPopup(auth, googleProvider)
       } catch (err) {
-        const code =
-          typeof err === 'object' && err !== null && 'code' in err
-            ? String((err as { code: string }).code)
-            : ''
-        if (code !== 'auth/account-exists-with-different-credential') {
+        if (
+          !(err instanceof FirebaseError) ||
+          err.code !== 'auth/account-exists-with-different-credential'
+        ) {
           throw err
         }
-        const cred = GoogleAuthProvider.credentialFromError(err as Error)
+        const cred = GoogleAuthProvider.credentialFromError(err)
         const idToken = cred?.idToken
         if (!idToken) {
           throw err
