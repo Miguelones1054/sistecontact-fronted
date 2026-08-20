@@ -80,6 +80,9 @@ export function contactStatusLabel(value?: string | null): string {
 }
 
 export function contactOutcomeLabel(value?: string | null): string {
+  if (value === 'in_prospects' || value === 'not_contacted') {
+    return 'En prospectos'
+  }
   const opt = CONTACT_OUTCOME_OPTIONS.find((o) => o.value === value)
   if (opt) return opt.label
   if (!value) return ''

@@ -81,6 +81,8 @@ export interface GlobalVisitor {
   place_id: string
   business_name: string
   visit_result: string
+  contact_outcome?: string
+  contact_status?: string
   visited_at: string
   updated_at: string
 }
@@ -91,7 +93,10 @@ export interface GlobalScheduledVisit {
   display_name: string
   place_id: string
   business_name: string
-  visit_date: string
+  visit_date?: string
+  visit_time?: string
+  call_date?: string
+  call_time?: string
   created_at: string
   updated_at: string
 }

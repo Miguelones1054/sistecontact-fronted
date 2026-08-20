@@ -328,6 +328,14 @@ function BusinessList({ businesses }: Props) {
                                   <span>
                                     {APP_STRINGS.business.whoScheduledDate}:{' '}
                                     {formatVisitDate(s.visit_date)}
+                                    {s.visit_time ? ` ${s.visit_time}` : ''}
+                                  </span>
+                                )}
+                                {s.call_date && (
+                                  <span>
+                                    {APP_STRINGS.business.whoScheduledCall}:{' '}
+                                    {formatVisitDate(s.call_date)}
+                                    {s.call_time ? ` ${s.call_time}` : ''}
                                   </span>
                                 )}
                               </div>
@@ -378,10 +386,12 @@ function BusinessList({ businesses }: Props) {
                                   )}
                               </div>
                               <div className="business-row__visitor-meta">
-                                {v.visit_result && (
+                                {(v.visit_result || v.contact_outcome) && (
                                   <span>
                                     {APP_STRINGS.business.whoVisitedResult}:{' '}
-                                    {contactOutcomeLabel(v.visit_result)}
+                                    {contactOutcomeLabel(
+                                      v.visit_result || v.contact_outcome,
+                                    )}
                                   </span>
                                 )}
                                 <span>{formatVisitorDate(v.updated_at)}</span>
